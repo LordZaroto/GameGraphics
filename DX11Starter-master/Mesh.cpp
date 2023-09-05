@@ -65,14 +65,14 @@ Mesh::~Mesh()
 	
 }
 
-ID3D11Buffer** Mesh::GetVertexBuffer()
+Microsoft::WRL::ComPtr<ID3D11Buffer> Mesh::GetVertexBuffer()
 {
-	return vertexBuffer.GetAddressOf();
+	return vertexBuffer;
 }
 
-ID3D11Buffer** Mesh::GetIndexBuffer()
+Microsoft::WRL::ComPtr<ID3D11Buffer> Mesh::GetIndexBuffer()
 {
-	return indexBuffer.GetAddressOf();
+	return indexBuffer;
 }
 
 int Mesh::GetIndexCount()

@@ -50,6 +50,11 @@ Game::~Game()
 
 	// Call Release() on any Direct3D objects made within this class
 	// - Note: this is unnecessary for D3D objects stored in ComPtrs
+
+	//ImGui clean up
+	ImGui_ImplDX11_Shutdown();
+	ImGui_ImplWin32_Shutdown();
+	ImGui::DestroyContext();
 }
 
 // --------------------------------------------------------
@@ -85,6 +90,14 @@ void Game::Init()
 		context->VSSetShader(vertexShader.Get(), 0, 0);
 		context->PSSetShader(pixelShader.Get(), 0, 0);
 	}
+
+	// Initialize ImGui itself & platform/renderer backends
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGui_ImplWin32_Init(hWnd);
+	ImGui_ImplDX11_Init(device.Get(), context.Get());
+
+	ImGui::StyleColorsDark(); //Light, Classic, Dark
 }
 
 // --------------------------------------------------------

@@ -4,6 +4,9 @@
 #include <d3d11.h>
 #include <string>
 #include <wrl/client.h> // Used for ComPtr - a smart pointer for COM objects
+#include "ImGui/imgui.h"
+#include "ImGui/imgui_impl_dx11.h"
+#include "ImGui/imgui_impl_win32.h"
 
 // We can include the correct library files here
 // instead of in Visual Studio settings if we want

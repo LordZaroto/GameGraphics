@@ -25,6 +25,9 @@ public:
 	void Update(float deltaTime, float totalTime);
 	void Draw(float deltaTime, float totalTime);
 
+	//Helper methods
+	void ImGuiUpdate(float deltaTime, float totalTime);
+
 private:
 
 	// Initialization helper methods - feel free to customize, combine, remove, etc.

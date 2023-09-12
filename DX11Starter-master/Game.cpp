@@ -264,6 +264,8 @@ void Game::OnResize()
 // --------------------------------------------------------
 void Game::Update(float deltaTime, float totalTime)
 {
+	ImGuiUpdate(deltaTime, totalTime);
+	
 	// Example input checking: Quit if the escape key is pressed
 	if (Input::GetInstance().KeyDown(VK_ESCAPE))
 		Quit();
@@ -292,6 +294,10 @@ void Game::Draw(float deltaTime, float totalTime)
 		meshes[i]->Draw();
 	}
 
+	//ImGui
+	ImGui::Render();
+	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+
 	// Frame END
 	// - These should happen exactly ONCE PER FRAME
 	// - At the very end of the frame (after drawing *everything*)
@@ -307,4 +313,35 @@ void Game::Draw(float deltaTime, float totalTime)
 		// Must re-bind buffers after presenting, as they become unbound
 		context->OMSetRenderTargets(1, backBufferRTV.GetAddressOf(), depthBufferDSV.Get());
 	}
+}
+
+// Stuff done every frame for ImGui
+void Game::ImGuiUpdate(float deltaTime, float totalTime)
+{
+	// Feed fresh input data to ImGui
+	ImGuiIO& io = ImGui::GetIO();
+	io.DeltaTime = deltaTime;
+	io.DisplaySize.x = (float)this->windowWidth;
+	io.DisplaySize.y = (float)this->windowHeight;
+
+	// Reset the frame
+	ImGui_ImplDX11_NewFrame();
+	ImGui_ImplWin32_NewFrame();
+	ImGui::NewFrame();
+
+	// Determine new input capture
+	Input& input = Input::GetInstance();
+	input.SetKeyboardCapture(io.WantCaptureKeyboard);
+	input.SetMouseCapture(io.WantCaptureMouse);
+
+	// Show the demo window
+	//ImGui::ShowDemoWindow();
+
+	//Making a ImGui window
+	ImGui::Begin("My First Window");
+
+	ImGui::Text("Jed");
+	ImGui::GetIO().Framerate;
+
+	ImGui::End();
 }

@@ -3,6 +3,7 @@
 #include "Vertex.h"
 #include "Input.h"
 #include "PathHelpers.h"
+#include "BufferStructs.h"
 #include <memory>
 #include <vector>
 
@@ -12,6 +13,11 @@
 
 // For the DirectX Math library
 using namespace DirectX;
+
+//ImGui constant buffer
+//Throws errors if in the header file for some reason
+XMFLOAT4 IMGUI_colorTint;
+XMFLOAT3 IMGUI_offset;
 
 // --------------------------------------------------------
 // Constructor
@@ -90,6 +96,23 @@ void Game::Init()
 		context->VSSetShader(vertexShader.Get(), 0, 0);
 		context->PSSetShader(pixelShader.Get(), 0, 0);
 	}
+
+	//Get the constant buffer size
+	unsigned int size = sizeof(VertexShaderExternalData);
+	size = (size + 15) / 16 * 16;
+
+	//Describe the constant buffer
+	D3D11_BUFFER_DESC cbDesc	= {};
+	cbDesc.BindFlags			= D3D11_BIND_CONSTANT_BUFFER;
+	cbDesc.ByteWidth			= size;
+	cbDesc.CPUAccessFlags		= D3D10_CPU_ACCESS_WRITE;
+	cbDesc.Usage				= D3D11_USAGE_DYNAMIC;
+
+	device->CreateBuffer(&cbDesc, 0, vsConstantBuffer.GetAddressOf());
+
+	//Initialize Colortint and offset shader
+	IMGUI_colorTint = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	IMGUI_offset = XMFLOAT3(0.0f, 0.0f, 0.0f);
 
 	// Initialize ImGui itself & platform/renderer backends
 	IMGUI_CHECKVERSION();
@@ -288,6 +311,22 @@ void Game::Draw(float deltaTime, float totalTime)
 		context->ClearDepthStencilView(depthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 	}
 
+	VertexShaderExternalData vsData;
+	vsData.colorTint	= IMGUI_colorTint;
+	vsData.offset		= IMGUI_offset;
+
+	D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
+	context->Map(vsConstantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
+
+	memcpy(mappedBuffer.pData, &vsData, sizeof(vsData));
+
+	context->Unmap(vsConstantBuffer.Get(), 0);
+
+	context->VSSetConstantBuffers(
+		0, //Which slot (register) to bind the buffer to?
+		1, //How many are we activating?
+		vsConstantBuffer.GetAddressOf()); //Array of buffers
+
 	//Drawing each mesh
 	for (int i = 0; i < meshes.size(); i++)
 	{
@@ -340,8 +379,31 @@ void Game::ImGuiUpdate(float deltaTime, float totalTime)
 	//Making a ImGui window
 	ImGui::Begin("My First Window");
 
-	ImGui::Text("Jed");
-	ImGui::GetIO().Framerate;
+	if (ImGui::CollapsingHeader("Stats"))
+	{
+		ImGui::Text("Framerate: (%g)", ImGui::GetIO().Framerate);
+		ImGui::Text("Height: (%g)", windowHeight);
+		ImGui::Text("Width: (%g)", windowWidth);
+	}
+
+	//Variables to interact with ImGui
+	static float vec3f[3] = { IMGUI_offset.x, IMGUI_offset.y, IMGUI_offset.z };
+	static float vec4f[4] = { IMGUI_colorTint.x, IMGUI_colorTint.y, IMGUI_colorTint.z, IMGUI_colorTint.w };
+	
+	if (ImGui::CollapsingHeader("Constant Buffer"))
+	{
+		ImGui::DragFloat3("Offset", vec3f, 0.01f, -1.0f, 1.0f);
+		ImGui::ColorEdit4("Color Tint", vec4f);
+	}
+
+	//Set the ImGui changes
+	IMGUI_offset.x = vec3f[0];
+	IMGUI_offset.y = vec3f[1];
+	IMGUI_offset.z = vec3f[2];
+	IMGUI_colorTint.x = vec4f[0];
+	IMGUI_colorTint.y = vec4f[1];
+	IMGUI_colorTint.z = vec4f[2];
+	IMGUI_colorTint.w = vec4f[3];
 
 	ImGui::End();
 }

@@ -9,6 +9,7 @@
 #include "ImGui/imgui_impl_win32.h"
 #include <vector>
 #include <memory>
+#include "Entity.h"
 
 class Game 
 	: public DXCore
@@ -50,7 +51,7 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer;
 
 	//List of meshes
-	std::vector<std::shared_ptr<Mesh>> meshes;
+	std::vector<std::shared_ptr<Entity>> entities;
 
 	//ImGui
 	//XMFLOAT4 IMGUI_colorTint;

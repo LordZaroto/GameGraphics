@@ -17,7 +17,7 @@ using namespace DirectX;
 //ImGui constant buffer
 //Throws errors if in the header file for some reason
 XMFLOAT4 IMGUI_colorTint;
-XMFLOAT3 IMGUI_offset;
+XMFLOAT4X4 IMGUI_world;
 
 // --------------------------------------------------------
 // Constructor
@@ -112,7 +112,11 @@ void Game::Init()
 
 	//Initialize Colortint and offset shader
 	IMGUI_colorTint = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
-	IMGUI_offset = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	IMGUI_world = XMFLOAT4X4(
+		1.0f, 0.0f, 0.0f, 0.0f,
+		0.0f, 1.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 1.0f, 0.0f,
+		0.0f, 0.0f, 0.0f, 1.0f);
 
 	// Initialize ImGui itself & platform/renderer backends
 	IMGUI_CHECKVERSION();
@@ -264,10 +268,18 @@ void Game::CreateGeometry()
 	std::shared_ptr<Mesh> triangle3 = std::make_shared<Mesh>(vertices3, (sizeof(vertices3) / sizeof(vertices3[0])), indices3,
 		(sizeof(indices3) / sizeof(indices3[0])), device, context);
 
-	//Add all meshes to the mesh vector
-	meshes.push_back(triangle);
-	meshes.push_back(triangle2);
-	meshes.push_back(triangle3);
+	std::shared_ptr<Entity> entity = std::make_shared<Entity>(triangle);
+	std::shared_ptr<Entity> entity1 = std::make_shared<Entity>(triangle2);
+	std::shared_ptr<Entity> entity2 = std::make_shared<Entity>(triangle2);
+	std::shared_ptr<Entity> entity3 = std::make_shared<Entity>(triangle3);
+	std::shared_ptr<Entity> entity4 = std::make_shared<Entity>(triangle3);
+	
+	//Add all entities to the entity vector
+	entities.push_back(entity);
+	entities.push_back(entity1);
+	entities.push_back(entity2);
+	entities.push_back(entity3);
+	entities.push_back(entity4);
 }
 
 
@@ -288,6 +300,11 @@ void Game::OnResize()
 void Game::Update(float deltaTime, float totalTime)
 {
 	ImGuiUpdate(deltaTime, totalTime);
+
+	//Move entities
+	entities[0]->GetTransform()->Scale((deltaTime/10)+1, (deltaTime / 10) + 1, 1);
+	entities[1]->GetTransform()->MoveAbsolute(deltaTime/100, deltaTime/100, 0);
+	entities[2]->GetTransform()->Rotate(0, 0, deltaTime);
 	
 	// Example input checking: Quit if the escape key is pressed
 	if (Input::GetInstance().KeyDown(VK_ESCAPE))
@@ -311,26 +328,26 @@ void Game::Draw(float deltaTime, float totalTime)
 		context->ClearDepthStencilView(depthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 	}
 
-	VertexShaderExternalData vsData;
-	vsData.colorTint	= IMGUI_colorTint;
-	vsData.offset		= IMGUI_offset;
-
-	D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
-	context->Map(vsConstantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
-
-	memcpy(mappedBuffer.pData, &vsData, sizeof(vsData));
-
-	context->Unmap(vsConstantBuffer.Get(), 0);
-
-	context->VSSetConstantBuffers(
-		0, //Which slot (register) to bind the buffer to?
-		1, //How many are we activating?
-		vsConstantBuffer.GetAddressOf()); //Array of buffers
-
-	//Drawing each mesh
-	for (int i = 0; i < meshes.size(); i++)
+	//Drawing each entity
+	for (int i = 0; i < entities.size(); i++)
 	{
-		meshes[i]->Draw();
+		VertexShaderExternalData vsData;
+		vsData.colorTint = IMGUI_colorTint;
+		vsData.world = entities[i]->GetTransform()->GetWorldMatrix();
+
+		D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
+		context->Map(vsConstantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
+
+		memcpy(mappedBuffer.pData, &vsData, sizeof(vsData));
+
+		context->Unmap(vsConstantBuffer.Get(), 0);
+
+		context->VSSetConstantBuffers(
+			0, //Which slot (register) to bind the buffer to?
+			1, //How many are we activating?
+			vsConstantBuffer.GetAddressOf()); //Array of buffers
+		
+		entities[i]->GetMesh()->Draw();
 	}
 
 	//ImGui
@@ -387,19 +404,32 @@ void Game::ImGuiUpdate(float deltaTime, float totalTime)
 	}
 
 	//Variables to interact with ImGui
-	static float vec3f[3] = { IMGUI_offset.x, IMGUI_offset.y, IMGUI_offset.z };
+	static float pos[5] = {0, 0, 0};
+	static float rot[5] = { 0, 0, 0 };
+	static float scl[5] = { 1, 1, 1 };
 	static float vec4f[4] = { IMGUI_colorTint.x, IMGUI_colorTint.y, IMGUI_colorTint.z, IMGUI_colorTint.w };
 	
 	if (ImGui::CollapsingHeader("Constant Buffer"))
 	{
-		ImGui::DragFloat3("Offset", vec3f, 0.01f, -1.0f, 1.0f);
+		//ImGui::DragFloat3("Offset", vec3f, 0.01f, -1.0f, 1.0f);
 		ImGui::ColorEdit4("Color Tint", vec4f);
 	}
 
+	if (ImGui::CollapsingHeader("Entities"))
+	{
+		for (int i = 0; i < entities.size(); i++)
+		{
+			if (ImGui::CollapsingHeader("Entity"))
+			{
+				ImGui::DragFloat3("Position", pos, 0.01f, -1.0f, 1.0f);
+				ImGui::DragFloat3("Rotation", rot, 0.01f, 0.0f, 360.0f);
+				ImGui::DragFloat3("Scale", scl, 0.01f, 1.0f, 5.0f);
+			}
+		}
+	}
+
 	//Set the ImGui changes
-	IMGUI_offset.x = vec3f[0];
-	IMGUI_offset.y = vec3f[1];
-	IMGUI_offset.z = vec3f[2];
+	entities[0]->GetTransform()->SetPosition(pos[0].x, )
 	IMGUI_colorTint.x = vec4f[0];
 	IMGUI_colorTint.y = vec4f[1];
 	IMGUI_colorTint.z = vec4f[2];

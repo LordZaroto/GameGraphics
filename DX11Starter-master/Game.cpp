@@ -404,12 +404,52 @@ void Game::ImGuiUpdate(float deltaTime, float totalTime)
 	}
 
 	//Variables to interact with ImGui
-	static float pos[5] = {0, 0, 0};
-	static float rot[5] = { 0, 0, 0 };
-	static float scl[5] = { 1, 1, 1 };
+	// I hate this, I tried to make it nice with loops and vectors
+	// Does not work. ImGui only wants one form. anger
+	//Entity 0
+	XMFLOAT3 posVec = entities[0]->GetTransform()->GetPosition();
+	static float pos[3] = { posVec.x, posVec.y, posVec.z };
+	XMFLOAT3 rotVec = entities[0]->GetTransform()->GetPitchYawRoll();
+	static float rot[3] = { rotVec.x, rotVec.y, rotVec.z};
+	XMFLOAT3 sclVec = entities[0]->GetTransform()->GetScale();
+	static float scl[3] = { sclVec.x, sclVec.y, sclVec.z};
+
+	//Entity 1
+	XMFLOAT3 posVec1 = entities[1]->GetTransform()->GetPosition();
+	static float pos1[3] = { posVec1.x, posVec1.y, posVec1.z };
+	XMFLOAT3 rotVec1 = entities[1]->GetTransform()->GetPitchYawRoll();
+	static float rot1[3] = { rotVec1.x, rotVec1.y, rotVec1.z };
+	XMFLOAT3 sclVec1 = entities[1]->GetTransform()->GetScale();
+	static float scl1[3] = { sclVec1.x, sclVec1.y, sclVec1.z };
+
+	//Entity 2
+	XMFLOAT3 posVec2 = entities[2]->GetTransform()->GetPosition();
+	static float pos2[3] = { posVec2.x, posVec2.y, posVec2.z };
+	XMFLOAT3 rotVec2 = entities[2]->GetTransform()->GetPitchYawRoll();
+	static float rot2[3] = { rotVec2.x, rotVec2.y, rotVec2.z };
+	XMFLOAT3 sclVec2 = entities[2]->GetTransform()->GetScale();
+	static float scl2[3] = { sclVec2.x, sclVec2.y, sclVec2.z };
+
+	//Entity 3
+	XMFLOAT3 posVec3 = entities[3]->GetTransform()->GetPosition();
+	static float pos3[3] = { posVec3.x, posVec3.y, posVec3.z };
+	XMFLOAT3 rotVec3 = entities[3]->GetTransform()->GetPitchYawRoll();
+	static float rot3[3] = { rotVec3.x, rotVec3.y, rotVec3.z };
+	XMFLOAT3 sclVec3 = entities[3]->GetTransform()->GetScale();
+	static float scl3[3] = { sclVec3.x, sclVec3.y, sclVec3.z };
+
+	//Entity 4
+	XMFLOAT3 posVec4 = entities[4]->GetTransform()->GetPosition();
+	static float pos4[3] = { posVec4.x, posVec4.y, posVec4.z };
+	XMFLOAT3 rotVec4 = entities[4]->GetTransform()->GetPitchYawRoll();
+	static float rot4[3] = { rotVec4.x, rotVec4.y, rotVec4.z };
+	XMFLOAT3 sclVec4 = entities[4]->GetTransform()->GetScale();
+	static float scl4[3] = { sclVec4.x, sclVec4.y, sclVec4.z };
+
+	//All meshes
 	static float vec4f[4] = { IMGUI_colorTint.x, IMGUI_colorTint.y, IMGUI_colorTint.z, IMGUI_colorTint.w };
 	
-	if (ImGui::CollapsingHeader("Constant Buffer"))
+	if (ImGui::CollapsingHeader("All Meshes"))
 	{
 		//ImGui::DragFloat3("Offset", vec3f, 0.01f, -1.0f, 1.0f);
 		ImGui::ColorEdit4("Color Tint", vec4f);
@@ -417,19 +457,64 @@ void Game::ImGuiUpdate(float deltaTime, float totalTime)
 
 	if (ImGui::CollapsingHeader("Entities"))
 	{
-		for (int i = 0; i < entities.size(); i++)
+		if (ImGui::TreeNode("Entity 0"))
 		{
-			if (ImGui::CollapsingHeader("Entity"))
-			{
-				ImGui::DragFloat3("Position", pos, 0.01f, -1.0f, 1.0f);
-				ImGui::DragFloat3("Rotation", rot, 0.01f, 0.0f, 360.0f);
-				ImGui::DragFloat3("Scale", scl, 0.01f, 1.0f, 5.0f);
-			}
+			ImGui::DragFloat3("Position", pos, 0.01f, -1.0f, 1.0f);
+			ImGui::DragFloat3("Rotation", rot, 0.01f, -XM_2PI, XM_2PI);
+			ImGui::DragFloat3("Scale", scl, 0.01f, 1.0f, 5.0f);
+			ImGui::TreePop();
+		}
+		if (ImGui::TreeNode("Entity 1"))
+		{
+			ImGui::DragFloat3("Position", pos1, 0.01f, -1.0f, 1.0f);
+			ImGui::DragFloat3("Rotation", rot1, 0.01f, -XM_2PI, XM_2PI);
+			ImGui::DragFloat3("Scale", scl1, 0.01f, 1.0f, 5.0f);
+			ImGui::TreePop();
+		}
+		if (ImGui::TreeNode("Entity 2"))
+		{
+			ImGui::DragFloat3("Position", pos2, 0.01f, -1.0f, 1.0f);
+			ImGui::DragFloat3("Rotation", rot2, 0.01f, -XM_2PI, XM_2PI);
+			ImGui::DragFloat3("Scale", scl2, 0.01f, 1.0f, 5.0f);
+			ImGui::TreePop();
+		}
+		if (ImGui::TreeNode("Entity 3"))
+		{
+			ImGui::DragFloat3("Position", pos3, 0.01f, -1.0f, 1.0f);
+			ImGui::DragFloat3("Rotation", rot3, 0.01f, -XM_2PI, XM_2PI);
+			ImGui::DragFloat3("Scale", scl3, 0.01f, 1.0f, 5.0f);
+			ImGui::TreePop();
+		}
+		if (ImGui::TreeNode("Entity 4"))
+		{
+			ImGui::DragFloat3("Position", pos4, 0.01f, -1.0f, 1.0f);
+			ImGui::DragFloat3("Rotation", rot4, 0.01f, -XM_2PI, XM_2PI);
+			ImGui::DragFloat3("Scale", scl4, 0.01f, 1.0f, 5.0f);
+			ImGui::TreePop();
 		}
 	}
 
 	//Set the ImGui changes
-	entities[0]->GetTransform()->SetPosition(pos[0].x, )
+	entities[0]->GetTransform()->SetPosition((XMFLOAT3)pos);
+	entities[0]->GetTransform()->SetRotation((XMFLOAT3)rot);
+	entities[0]->GetTransform()->SetScale((XMFLOAT3)scl);
+
+	entities[1]->GetTransform()->SetPosition((XMFLOAT3)pos1);
+	entities[1]->GetTransform()->SetRotation((XMFLOAT3)rot1);
+	entities[1]->GetTransform()->SetScale((XMFLOAT3)scl1);
+
+	entities[2]->GetTransform()->SetPosition((XMFLOAT3)pos2);
+	entities[2]->GetTransform()->SetRotation((XMFLOAT3)rot2);
+	entities[2]->GetTransform()->SetScale((XMFLOAT3)scl2);
+
+	entities[3]->GetTransform()->SetPosition((XMFLOAT3)pos3);
+	entities[3]->GetTransform()->SetRotation((XMFLOAT3)rot3);
+	entities[3]->GetTransform()->SetScale((XMFLOAT3)scl3);
+
+	entities[4]->GetTransform()->SetPosition((XMFLOAT3)pos4);
+	entities[4]->GetTransform()->SetRotation((XMFLOAT3)rot4);
+	entities[4]->GetTransform()->SetScale((XMFLOAT3)scl4);
+
 	IMGUI_colorTint.x = vec4f[0];
 	IMGUI_colorTint.y = vec4f[1];
 	IMGUI_colorTint.z = vec4f[2];

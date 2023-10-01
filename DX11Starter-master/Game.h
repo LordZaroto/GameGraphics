@@ -10,6 +10,7 @@
 #include <vector>
 #include <memory>
 #include "Entity.h"
+#include "Camera.h"
 
 class Game 
 	: public DXCore
@@ -49,6 +50,10 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader;
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout;
 	Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer;
+
+	//Camera
+	std::vector<std::shared_ptr<Camera>> cameras;
+	int activeCameraIndex;
 
 	//List of meshes
 	std::vector<std::shared_ptr<Entity>> entities;

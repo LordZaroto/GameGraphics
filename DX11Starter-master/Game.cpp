@@ -41,6 +41,19 @@ Game::Game(HINSTANCE hInstance)
 	CreateConsoleWindow(500, 120, 32, 120);
 	printf("Console window created successfully.  Feel free to printf() here.\n");
 #endif
+
+	std::shared_ptr<Camera> camera = std::make_shared<Camera>(	(float)this->windowWidth / this->windowHeight, 
+		DirectX::XMFLOAT3(0.0f, 0.0f, -1.0f), 45, 0.01f, 1000, 6, 0.5f, false);
+
+	std::shared_ptr<Camera> camera1 = std::make_shared<Camera>((float)this->windowWidth / this->windowHeight,
+		DirectX::XMFLOAT3(0.0f, 2.0f, -3.0f), 108, 0.1f, 100, 6, 0.5f, false);
+
+	std::shared_ptr<Camera> camera2 = std::make_shared<Camera>((float)this->windowWidth / this->windowHeight,
+		DirectX::XMFLOAT3(1.0f, -2.0f, -5.0f), 140, 0.1f, 150, 6, 0.5f, false);
+
+	activeCameraIndex = 0;
+
+	cameras = { camera, camera1, camera2 };
 }
 
 // --------------------------------------------------------
@@ -292,6 +305,11 @@ void Game::OnResize()
 {
 	// Handle base-level DX resize stuff
 	DXCore::OnResize();
+
+	for (int i = 0; i < cameras.size(); i++)
+	{
+		cameras[i]->UpdateProjectionMatrix((float)this->windowWidth / this->windowHeight);
+	}
 }
 
 // --------------------------------------------------------
@@ -302,9 +320,12 @@ void Game::Update(float deltaTime, float totalTime)
 	ImGuiUpdate(deltaTime, totalTime);
 
 	//Move entities
-	entities[0]->GetTransform()->Scale((deltaTime/10)+1, (deltaTime / 10) + 1, 1);
-	entities[1]->GetTransform()->MoveAbsolute(deltaTime/100, deltaTime/100, 0);
-	entities[2]->GetTransform()->Rotate(0, 0, deltaTime);
+	//entities[0]->GetTransform()->Scale((deltaTime/10)+1, (deltaTime / 10) + 1, 1);
+	//entities[1]->GetTransform()->MoveAbsolute(deltaTime/100, deltaTime/100, 0);
+	//entities[2]->GetTransform()->Rotate(0, 0, deltaTime);
+
+	//Camera
+	cameras[activeCameraIndex]->Update(deltaTime);
 	
 	// Example input checking: Quit if the escape key is pressed
 	if (Input::GetInstance().KeyDown(VK_ESCAPE))
@@ -334,6 +355,8 @@ void Game::Draw(float deltaTime, float totalTime)
 		VertexShaderExternalData vsData;
 		vsData.colorTint = IMGUI_colorTint;
 		vsData.world = entities[i]->GetTransform()->GetWorldMatrix();
+		vsData.view = cameras[activeCameraIndex]->GetViewMatrix();
+		vsData.projection = cameras[activeCameraIndex]->GetProjectionMatrix();
 
 		D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
 		context->Map(vsConstantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
@@ -401,6 +424,52 @@ void Game::ImGuiUpdate(float deltaTime, float totalTime)
 		ImGui::Text("Framerate: (%g)", ImGui::GetIO().Framerate);
 		ImGui::Text("Height: (%g)", windowHeight);
 		ImGui::Text("Width: (%g)", windowWidth);
+	}
+
+	if (ImGui::CollapsingHeader("Camera"))
+	{
+
+		if (ImGui::TreeNode("Camera List"))
+		{
+			const char* cameraNames[] = { "Camera 1", "Camera 2", "Camera 3"};
+			static int currentCamera = 0;
+
+			if (ImGui::BeginListBox("Cameras"))
+			{
+				for (int i = 0; i < IM_ARRAYSIZE(cameraNames); i++)
+				{
+					const bool isSelected = (currentCamera == i);
+					if (ImGui::Selectable(cameraNames[i], isSelected))
+						currentCamera = i;
+					if (isSelected)
+						ImGui::SetItemDefaultFocus();
+
+					activeCameraIndex = currentCamera;
+				}
+				ImGui::EndListBox();
+
+			}
+
+			ImGui::TreePop();
+		}
+
+		XMFLOAT3 camPosVec = cameras[activeCameraIndex]->GetTransform()->GetPosition();
+
+		if (ImGui::TreeNode("Camera Stats"))
+		{
+			XMFLOAT3 camPosVec = cameras[activeCameraIndex]->GetTransform()->GetPosition();
+			//position
+			ImGui::Text("Position: (%g, %g, %g)", camPosVec.x, camPosVec.y, camPosVec.z);
+			//fov
+			ImGui::Text("Field of View: (%g)", cameras[activeCameraIndex]->GetFOV());
+			//near plane
+			ImGui::Text("Near Plane: (%g)", cameras[activeCameraIndex]->GetNearPlane());
+			//far plane
+			ImGui::Text("Far Plane: (%g)", cameras[activeCameraIndex]->GetFarPlane());
+			//orthographic
+			ImGui::Text("Orthographic: (%g)", cameras[activeCameraIndex]->GetIsOrthographic());
+			ImGui::TreePop();
+		}
 	}
 
 	//Variables to interact with ImGui

@@ -101,13 +101,10 @@ void Game::Init()
 		// Ensure the pipeline knows how to interpret all the numbers stored in
 		// the vertex buffer. For this course, all of your vertices will probably
 		// have the same layout, so we can just set this once at startup.
-		context->IASetInputLayout(inputLayout.Get());
 
 		// Set the active vertex and pixel shaders
 		//  - Once you start applying different shaders to different objects,
 		//    these calls will need to happen multiple times per frame
-		context->VSSetShader(vertexShader.Get(), 0, 0);
-		context->PSSetShader(pixelShader.Get(), 0, 0);
 	}
 
 	//Get the constant buffer size
@@ -120,8 +117,6 @@ void Game::Init()
 	cbDesc.ByteWidth			= size;
 	cbDesc.CPUAccessFlags		= D3D10_CPU_ACCESS_WRITE;
 	cbDesc.Usage				= D3D11_USAGE_DYNAMIC;
-
-	device->CreateBuffer(&cbDesc, 0, vsConstantBuffer.GetAddressOf());
 
 	//Initialize Colortint and offset shader
 	IMGUI_colorTint = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -150,64 +145,8 @@ void Game::Init()
 // --------------------------------------------------------
 void Game::LoadShaders()
 {
-	// BLOBs (or Binary Large OBjects) for reading raw data from external files
-	// - This is a simplified way of handling big chunks of external data
-	// - Literally just a big array of bytes read from a file
-	ID3DBlob* pixelShaderBlob;
-	ID3DBlob* vertexShaderBlob;
-
-	// Loading shaders
-	//  - Visual Studio will compile our shaders at build time
-	//  - They are saved as .cso (Compiled Shader Object) files
-	//  - We need to load them when the application starts
-	{
-		// Read our compiled shader code files into blobs
-		// - Essentially just "open the file and plop its contents here"
-		// - Uses the custom FixPath() helper from Helpers.h to ensure relative paths
-		// - Note the "L" before the string - this tells the compiler the string uses wide characters
-		D3DReadFileToBlob(FixPath(L"PixelShader.cso").c_str(), &pixelShaderBlob);
-		D3DReadFileToBlob(FixPath(L"VertexShader.cso").c_str(), &vertexShaderBlob);
-
-		// Create the actual Direct3D shaders on the GPU
-		device->CreatePixelShader(
-			pixelShaderBlob->GetBufferPointer(),	// Pointer to blob's contents
-			pixelShaderBlob->GetBufferSize(),		// How big is that data?
-			0,										// No classes in this shader
-			pixelShader.GetAddressOf());			// Address of the ID3D11PixelShader pointer
-
-		device->CreateVertexShader(
-			vertexShaderBlob->GetBufferPointer(),	// Get a pointer to the blob's contents
-			vertexShaderBlob->GetBufferSize(),		// How big is that data?
-			0,										// No classes in this shader
-			vertexShader.GetAddressOf());			// The address of the ID3D11VertexShader pointer
-	}
-
-	// Create an input layout 
-	//  - This describes the layout of data sent to a vertex shader
-	//  - In other words, it describes how to interpret data (numbers) in a vertex buffer
-	//  - Doing this NOW because it requires a vertex shader's byte code to verify against!
-	//  - Luckily, we already have that loaded (the vertex shader blob above)
-	{
-		D3D11_INPUT_ELEMENT_DESC inputElements[2] = {};
-
-		// Set up the first element - a position, which is 3 float values
-		inputElements[0].Format = DXGI_FORMAT_R32G32B32_FLOAT;				// Most formats are described as color channels; really it just means "Three 32-bit floats"
-		inputElements[0].SemanticName = "POSITION";							// This is "POSITION" - needs to match the semantics in our vertex shader input!
-		inputElements[0].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;	// How far into the vertex is this?  Assume it's after the previous element
-
-		// Set up the second element - a color, which is 4 more float values
-		inputElements[1].Format = DXGI_FORMAT_R32G32B32A32_FLOAT;			// 4x 32-bit floats
-		inputElements[1].SemanticName = "COLOR";							// Match our vertex shader input!
-		inputElements[1].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;	// After the previous element
-
-		// Create the input layout, verifying our description against actual shader code
-		device->CreateInputLayout(
-			inputElements,							// An array of descriptions
-			2,										// How many elements in that array?
-			vertexShaderBlob->GetBufferPointer(),	// Pointer to the code of a shader that uses this layout
-			vertexShaderBlob->GetBufferSize(),		// Size of the shader code that uses this layout
-			inputLayout.GetAddressOf());			// Address of the resulting ID3D11InputLayout pointer
-	}
+	vertexShader = std::make_shared<SimpleVertexShader>(device, context, FixPath(L"VertexShader.cso").c_str());
+	pixelShader = std::make_shared<SimplePixelShader>(device, context, FixPath(L"PixelShader.cso").c_str());
 }
 
 
@@ -232,60 +171,122 @@ void Game::CreateGeometry()
 
 
 	//Colors
-	XMFLOAT4 red = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
+	/*XMFLOAT4 red = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
 	XMFLOAT4 green = XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
 	XMFLOAT4 blue = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
 	XMFLOAT4 black = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
-	XMFLOAT4 white = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	XMFLOAT4 white = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);*/
 
 	//Mesh 1
-	Vertex vertices[] =
+	/*Vertex vertices[] =
 	{
-		{ XMFLOAT3(+0.0f, +0.3f, +0.0f), red },
-		{ XMFLOAT3(+0.3f, -0.3f, +0.0f), blue },
-		{ XMFLOAT3(-0.3f, -0.3f, +0.0f), green },
-	};
+		{ XMFLOAT3(+0.0f, +0.3f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f)},
+		{ XMFLOAT3(+0.3f, -0.3f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) },
+		{ XMFLOAT3(-0.3f, -0.3f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) },
+	};*/
 
-	unsigned int indices[] = { 0, 1, 2 };
+	std::vector<Vertex> verts1;
+	verts1.push_back({ XMFLOAT3(+0.0f, +0.3f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) });
+	verts1.push_back({ XMFLOAT3(+0.3f, -0.3f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) });
+	verts1.push_back({ XMFLOAT3(-0.3f, -0.3f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) });
 
-	std::shared_ptr<Mesh> triangle = std::make_shared<Mesh>(vertices, (sizeof(vertices)/sizeof(vertices[0])), indices, 
-		(sizeof(indices) / sizeof(indices[0])), device, context);
+	//unsigned int indices[] = { 0, 1, 2 };
+
+	std::vector<UINT> indicies;
+	indicies.push_back(0);
+	indicies.push_back(1);
+	indicies.push_back(2);
+
+	std::shared_ptr<Mesh> triangle = std::make_shared<Mesh>(verts1, verts1.size(), indicies,
+		indicies.size(), device, context);
 
 	//Mesh 2
-	Vertex vertices2[] =
+	/*Vertex vertices2[] =
 	{
-		{ XMFLOAT3(+0.7f, +0.8f, +0.0f), black },
-		{ XMFLOAT3(+0.9f, +0.5f, +0.0f), black },
-		{ XMFLOAT3(+0.8f, +0.3f, +0.0f), red },
-		{ XMFLOAT3(+0.6f, +0.3f, +0.0f), red },
-		{ XMFLOAT3(+0.7f, +0.0f, +0.0f), black },
-		{ XMFLOAT3(+0.9f, +0.2f, +0.0f), black },
-	};
+		{ XMFLOAT3(+0.7f, +0.8f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) },
+		{ XMFLOAT3(+0.9f, +0.5f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) },
+		{ XMFLOAT3(+0.8f, +0.3f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) },
+		{ XMFLOAT3(+0.6f, +0.3f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) },
+		{ XMFLOAT3(+0.7f, +0.0f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) },
+		{ XMFLOAT3(+0.9f, +0.2f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) },
+	};*/
 
-	unsigned int indices2[] = { 0, 1, 2, 0, 2, 3, 3, 2, 4, 2, 5, 4};
+	std::vector<Vertex> verts2;
+	verts2.push_back({ XMFLOAT3(+0.7f, +0.8f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) });
+	verts2.push_back({ XMFLOAT3(+0.9f, +0.5f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) });
+	verts2.push_back({ XMFLOAT3(+0.8f, +0.3f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) });
+	verts2.push_back({ XMFLOAT3(+0.6f, +0.3f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) });
+	verts2.push_back({ XMFLOAT3(+0.7f, +0.0f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) });
+	verts2.push_back({ XMFLOAT3(+0.9f, +0.2f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) });
 
-	std::shared_ptr<Mesh> triangle2 = std::make_shared<Mesh>(vertices2, (sizeof(vertices2) / sizeof(vertices2[0])), indices2,
-		(sizeof(indices2) / sizeof(indices2[0])), device, context);
+	//unsigned int indices2[] = { 0, 1, 2, 0, 2, 3, 3, 2, 4, 2, 5, 4};
+
+	std::vector<UINT> indicies2;
+	indicies2.push_back(0);
+	indicies2.push_back(1);
+	indicies2.push_back(2);
+	indicies2.push_back(0);
+	indicies2.push_back(2);
+	indicies2.push_back(3);
+	indicies2.push_back(3);
+	indicies2.push_back(2);
+	indicies2.push_back(4);
+	indicies2.push_back(2);
+	indicies2.push_back(5);
+	indicies2.push_back(4);
+
+	std::shared_ptr<Mesh> triangle2 = std::make_shared<Mesh>(verts2, verts2.size(), indicies2,
+		indicies2.size(), device, context);
 
 	//Mesh 3
-	Vertex vertices3[] =
+	/*Vertex vertices3[] =
 	{
-		{ XMFLOAT3(-0.8f, +0.5f, +0.0f), black },
-		{ XMFLOAT3(-0.4f, +0.5f, +0.0f), black },
-		{ XMFLOAT3(-0.8f, +0.3f, +0.0f), white },
-		{ XMFLOAT3(-0.4f, +0.3f, +0.0f), white },
-	};
+		{ XMFLOAT3(-0.8f, +0.5f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) },
+		{ XMFLOAT3(-0.4f, +0.5f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) },
+		{ XMFLOAT3(-0.8f, +0.3f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) },
+		{ XMFLOAT3(-0.4f, +0.3f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) },
+	};*/
 
-	unsigned int indices3[] = { 0, 1, 2, 1, 3, 2};
+	std::vector<Vertex> verts3;
+	verts3.push_back({ XMFLOAT3(-0.8f, +0.5f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) });
+	verts3.push_back({ XMFLOAT3(-0.4f, +0.5f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) });
+	verts3.push_back({ XMFLOAT3(-0.8f, +0.3f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) });
+	verts3.push_back({ XMFLOAT3(-0.4f, +0.3f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) });
 
-	std::shared_ptr<Mesh> triangle3 = std::make_shared<Mesh>(vertices3, (sizeof(vertices3) / sizeof(vertices3[0])), indices3,
-		(sizeof(indices3) / sizeof(indices3[0])), device, context);
+	//unsigned int indices3[] = { 0, 1, 2, 1, 3, 2};
 
-	std::shared_ptr<Entity> entity = std::make_shared<Entity>(triangle);
-	std::shared_ptr<Entity> entity1 = std::make_shared<Entity>(triangle2);
-	std::shared_ptr<Entity> entity2 = std::make_shared<Entity>(triangle2);
-	std::shared_ptr<Entity> entity3 = std::make_shared<Entity>(triangle3);
-	std::shared_ptr<Entity> entity4 = std::make_shared<Entity>(triangle3);
+	std::vector<UINT> indicies3;
+	indicies3.push_back(0);
+	indicies3.push_back(1);
+	indicies3.push_back(2);
+	indicies3.push_back(1);
+	indicies3.push_back(3);
+	indicies3.push_back(2);
+
+	std::shared_ptr<Mesh> triangle3 = std::make_shared<Mesh>(verts3, verts3.size(), indicies3,
+		indicies3.size(), device, context);
+
+	//Create Materials
+	material = std::make_shared<Material>(
+		XMFLOAT4(1.0, 1.0, 1.0, 1.0),
+		pixelShader,
+		vertexShader);
+	material1 = std::make_shared<Material>(
+		XMFLOAT4(1.0, 0.0, 1.0, 1.0),
+		pixelShader,
+		vertexShader);
+	material2 = std::make_shared<Material>(
+		XMFLOAT4(1.0, 1.0, 0.0, 1.0),
+		pixelShader,
+		vertexShader);
+
+	std::shared_ptr<Entity> entity = std::make_shared<Entity>(triangle, material2);
+	std::shared_ptr<Entity> entity1 = std::make_shared<Entity>(triangle2, material1);
+	std::shared_ptr<Entity> entity2 = std::make_shared<Entity>(triangle2, material);
+	std::shared_ptr<Entity> entity3 = std::make_shared<Entity>(triangle3, material1);
+	std::shared_ptr<Entity> entity4 = std::make_shared<Entity>(triangle3, material2);
+	std::shared_ptr<Entity> entity5 = std::make_shared<Entity>(
+		std::make_shared<Mesh>(FixPath(L"../../../Assets/Models/sphere.obj").c_str(), device, context), material2);
 	
 	//Add all entities to the entity vector
 	entities.push_back(entity);
@@ -293,6 +294,7 @@ void Game::CreateGeometry()
 	entities.push_back(entity2);
 	entities.push_back(entity3);
 	entities.push_back(entity4);
+	entities.push_back(entity5);
 }
 
 
@@ -352,24 +354,19 @@ void Game::Draw(float deltaTime, float totalTime)
 	//Drawing each entity
 	for (int i = 0; i < entities.size(); i++)
 	{
-		VertexShaderExternalData vsData;
-		vsData.colorTint = IMGUI_colorTint;
-		vsData.world = entities[i]->GetTransform()->GetWorldMatrix();
-		vsData.view = cameras[activeCameraIndex]->GetViewMatrix();
-		vsData.projection = cameras[activeCameraIndex]->GetProjectionMatrix();
-
-		D3D11_MAPPED_SUBRESOURCE mappedBuffer = {};
-		context->Map(vsConstantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedBuffer);
-
-		memcpy(mappedBuffer.pData, &vsData, sizeof(vsData));
-
-		context->Unmap(vsConstantBuffer.Get(), 0);
-
-		context->VSSetConstantBuffers(
-			0, //Which slot (register) to bind the buffer to?
-			1, //How many are we activating?
-			vsConstantBuffer.GetAddressOf()); //Array of buffers
+		std::shared_ptr<Material> mat = entities[i]->GetMaterial();
 		
+		std::shared_ptr<SimpleVertexShader> vs = mat->GetVertexShader(); //Exception thrown: read access violation. this was 0x20
+		vs->SetFloat4("colorTint", mat->GetColorTint());
+		vs->SetMatrix4x4("world", entities[i]->GetTransform()->GetWorldMatrix());
+		vs->SetMatrix4x4("view", cameras[activeCameraIndex]->GetViewMatrix());
+		vs->SetMatrix4x4("projection", cameras[activeCameraIndex]->GetProjectionMatrix());
+
+		
+		vs->CopyAllBufferData();
+		
+		mat->GetVertexShader()->SetShader();
+		mat->GetPixelShader()->SetShader();
 		entities[i]->GetMesh()->Draw();
 	}
 

@@ -11,6 +11,8 @@
 #include <memory>
 #include "Entity.h"
 #include "Camera.h"
+#include "SimpleShader.h"
+#include "Material.h"
 
 class Game 
 	: public DXCore
@@ -46,10 +48,8 @@ private:
 	//Microsoft::WRL::ComPtr<ID3D11Buffer> indexBuffer;
 	
 	// Shaders and shader-related constructs
-	Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShader;
-	Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader;
-	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout;
-	Microsoft::WRL::ComPtr<ID3D11Buffer> vsConstantBuffer;
+	std::shared_ptr<SimplePixelShader> pixelShader;
+	std::shared_ptr<SimpleVertexShader> vertexShader;
 
 	//Camera
 	std::vector<std::shared_ptr<Camera>> cameras;
@@ -58,8 +58,9 @@ private:
 	//List of meshes
 	std::vector<std::shared_ptr<Entity>> entities;
 
-	//ImGui
-	//XMFLOAT4 IMGUI_colorTint;
-	//XMFLOAT3 IMGUI_offset;
+	//List of Materials
+	std::shared_ptr<Material> material;
+	std::shared_ptr<Material> material1;
+	std::shared_ptr<Material> material2;
 };
 

@@ -1,8 +1,9 @@
 #include "Entity.h"
 
-Entity::Entity(std::shared_ptr<Mesh> mesh)
+Entity::Entity(std::shared_ptr<Mesh> mesh , std::shared_ptr<Material> material)
 {
     this->mesh = mesh;
+    this->material = material;
     transform = std::make_shared<Transform>();
 }
 
@@ -18,4 +19,14 @@ std::shared_ptr<Transform> Entity::GetTransform()
 std::shared_ptr<Mesh> Entity::GetMesh()
 {
     return mesh;
+}
+
+std::shared_ptr<Material> Entity::GetMaterial()
+{
+    return material;
+}
+
+void Entity::SetMaterial(std::shared_ptr<Material> material)
+{
+    this->material = material;
 }

@@ -356,17 +356,20 @@ void Game::Draw(float deltaTime, float totalTime)
 	{
 		std::shared_ptr<Material> mat = entities[i]->GetMaterial();
 		
-		std::shared_ptr<SimpleVertexShader> vs = mat->GetVertexShader(); //Exception thrown: read access violation. this was 0x20
-		vs->SetFloat4("colorTint", mat->GetColorTint());
+		std::shared_ptr<SimpleVertexShader> vs = mat->GetVertexShader();
 		vs->SetMatrix4x4("world", entities[i]->GetTransform()->GetWorldMatrix());
 		vs->SetMatrix4x4("view", cameras[activeCameraIndex]->GetViewMatrix());
 		vs->SetMatrix4x4("projection", cameras[activeCameraIndex]->GetProjectionMatrix());
 
-		
 		vs->CopyAllBufferData();
+
+		std::shared_ptr<SimplePixelShader> ps = mat->GetPixelShader();
+		ps->SetFloat4("colorTint", mat->GetColorTint());
+
+		ps->CopyAllBufferData();
 		
-		mat->GetVertexShader()->SetShader();
-		mat->GetPixelShader()->SetShader();
+		vs->SetShader();
+		ps->SetShader();
 		entities[i]->GetMesh()->Draw();
 	}
 

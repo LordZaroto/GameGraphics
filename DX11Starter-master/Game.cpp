@@ -283,11 +283,11 @@ void Game::CreateGeometry()
 
 	std::shared_ptr<Entity> entity = std::make_shared<Entity>(triangle, material2);
 	std::shared_ptr<Entity> entity1 = std::make_shared<Entity>(
-		std::make_shared<Mesh>(FixPath(L"../../../Assets/Models/torus.obj").c_str(), device, context), material2);
+		std::make_shared<Mesh>(FixPath(L"../../Assets/Models/torus.obj").c_str(), device, context), material2);
 	std::shared_ptr<Entity> entity2 = std::make_shared<Entity>(triangle2, material);
 	std::shared_ptr<Entity> entity3 = std::make_shared<Entity>(triangle3, material1);
 	std::shared_ptr<Entity> entity4 = std::make_shared<Entity>(
-		std::make_shared<Mesh>(FixPath(L"../../../Assets/Models/sphere.obj").c_str(), device, context), material2);
+		std::make_shared<Mesh>(FixPath(L"../../Assets/Models/sphere.obj").c_str(), device, context), material2);
 
 	//Move entities
 	entity4->GetTransform()->SetPosition(XMFLOAT3(2.0, 0.0, 0.0));

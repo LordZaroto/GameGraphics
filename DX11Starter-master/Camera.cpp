@@ -106,20 +106,20 @@ void Camera::Update(float dt)
     //Looking
     if (input.MouseLeftDown())
     {
-        int cursorMovementX = input.GetMouseXDelta() * sensitivtiy;
-        int cursorMovementY = input.GetMouseYDelta() * sensitivtiy;
+        float cursorMovementX = input.GetMouseXDelta() * sensitivtiy;
+        float cursorMovementY = input.GetMouseYDelta() * sensitivtiy;
 
         transform->Rotate(cursorMovementY, cursorMovementX, 0.0f);
 
         //Clamp X Rotation
         XMFLOAT3 rotVec = transform->GetPitchYawRoll();
-        if (rotVec.x > XM_1DIVPI)
+        if (rotVec.x > XM_1DIVPI * 3)
         {
-            transform->SetRotation(XM_1DIVPI, rotVec.y, rotVec.z);
+            transform->SetRotation(XM_1DIVPI * 3, rotVec.y, rotVec.z);
         }
-        else if (rotVec.x < -XM_1DIVPI)
+        else if (rotVec.x < -XM_1DIVPI * 3)
         {
-            transform->SetRotation(-XM_1DIVPI, rotVec.y, rotVec.z);
+            transform->SetRotation(-XM_1DIVPI * 3, rotVec.y, rotVec.z);
         }
     }
 

@@ -43,13 +43,13 @@ Game::Game(HINSTANCE hInstance)
 #endif
 
 	std::shared_ptr<Camera> camera = std::make_shared<Camera>(	(float)this->windowWidth / this->windowHeight, 
-		DirectX::XMFLOAT3(0.0f, 0.0f, -1.0f), 45, 0.01f, 1000, 6, 0.5f, false);
+		DirectX::XMFLOAT3(0.0f, 0.0f, -1.0f), 45.0f, 0.01f, 1000.0f, 3.0f, 0.01f, false);
 
 	std::shared_ptr<Camera> camera1 = std::make_shared<Camera>((float)this->windowWidth / this->windowHeight,
-		DirectX::XMFLOAT3(0.0f, 2.0f, -3.0f), 108, 0.1f, 100, 6, 0.5f, false);
+		DirectX::XMFLOAT3(0.0f, 2.0f, -3.0f), 108.0f, 0.1f, 100.0f, 3.0f, 0.01f, false);
 
 	std::shared_ptr<Camera> camera2 = std::make_shared<Camera>((float)this->windowWidth / this->windowHeight,
-		DirectX::XMFLOAT3(1.0f, -2.0f, -5.0f), 140, 0.1f, 150, 6, 0.5f, false);
+		DirectX::XMFLOAT3(1.0f, -2.0f, -5.0f), 140.0f, 0.1f, 150.0f, 3.0f, 0.01f, false);
 
 	activeCameraIndex = 0;
 
@@ -147,6 +147,7 @@ void Game::LoadShaders()
 {
 	vertexShader = std::make_shared<SimpleVertexShader>(device, context, FixPath(L"VertexShader.cso").c_str());
 	pixelShader = std::make_shared<SimplePixelShader>(device, context, FixPath(L"PixelShader.cso").c_str());
+	psCustom = std::make_shared<SimplePixelShader>(device, context, FixPath(L"CustomPS.cso").c_str());
 }
 
 
@@ -272,21 +273,25 @@ void Game::CreateGeometry()
 		pixelShader,
 		vertexShader);
 	material1 = std::make_shared<Material>(
-		XMFLOAT4(1.0, 0.0, 1.0, 1.0),
+		XMFLOAT4(0.0, 1.0, 1.0, 1.0),
 		pixelShader,
 		vertexShader);
 	material2 = std::make_shared<Material>(
 		XMFLOAT4(1.0, 1.0, 0.0, 1.0),
-		pixelShader,
+		psCustom,
 		vertexShader);
 
 	std::shared_ptr<Entity> entity = std::make_shared<Entity>(triangle, material2);
-	std::shared_ptr<Entity> entity1 = std::make_shared<Entity>(triangle2, material1);
+	std::shared_ptr<Entity> entity1 = std::make_shared<Entity>(
+		std::make_shared<Mesh>(FixPath(L"../../../Assets/Models/torus.obj").c_str(), device, context), material2);
 	std::shared_ptr<Entity> entity2 = std::make_shared<Entity>(triangle2, material);
 	std::shared_ptr<Entity> entity3 = std::make_shared<Entity>(triangle3, material1);
-	std::shared_ptr<Entity> entity4 = std::make_shared<Entity>(triangle3, material2);
-	std::shared_ptr<Entity> entity5 = std::make_shared<Entity>(
+	std::shared_ptr<Entity> entity4 = std::make_shared<Entity>(
 		std::make_shared<Mesh>(FixPath(L"../../../Assets/Models/sphere.obj").c_str(), device, context), material2);
+
+	//Move entities
+	entity4->GetTransform()->SetPosition(XMFLOAT3(2.0, 0.0, 0.0));
+	entity1->GetTransform()->SetPosition(XMFLOAT3(-2.0, 0.0, 0.0));
 	
 	//Add all entities to the entity vector
 	entities.push_back(entity);
@@ -294,7 +299,6 @@ void Game::CreateGeometry()
 	entities.push_back(entity2);
 	entities.push_back(entity3);
 	entities.push_back(entity4);
-	entities.push_back(entity5);
 }
 
 

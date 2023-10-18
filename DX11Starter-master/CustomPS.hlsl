@@ -1,31 +1,8 @@
+#include "ShaderHelper.hlsli"
+
 cbuffer ExternalData : register(b0)
 {
     float4 colorTint;
-}
-// Struct representing the data we expect to receive from earlier pipeline stages
-// - Should match the output of our corresponding vertex shader
-// - The name of the struct itself is unimportant
-// - The variable names don't have to match other shaders (just the semantics)
-// - Each variable must have a semantic, which defines its usage
-struct VertexToPixel
-{
-	// Data type
-	//  |
-	//  |   Name          Semantic
-	//  |    |                |
-	//  v    v                v
-    float4 screenPosition : SV_POSITION;
-    float2 uv : TEXCOORD; //UVs
-};
-
-float3 palette(float t)
-{
-    float3 a = float3(0.558, 0.648, -0.072);
-    float3 b = float3(-0.706, 0.280, -0.830);
-    float3 c = float3(0.680, 0.680, 0.288);
-    float3 d = float3(1.217, 1.887, 0.358);
-    
-    return a + b * cos(6.28318 * (c * t + d));
 }
 
 // --------------------------------------------------------

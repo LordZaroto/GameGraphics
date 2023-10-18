@@ -13,6 +13,7 @@
 #include "Camera.h"
 #include "SimpleShader.h"
 #include "Material.h"
+#include "Lights.h"
 
 class Game 
 	: public DXCore
@@ -63,5 +64,9 @@ private:
 	std::shared_ptr<Material> material;
 	std::shared_ptr<Material> material1;
 	std::shared_ptr<Material> material2;
+
+	//Lights
+	DirectX::XMFLOAT3 ambientColor;
+	Light directionalLight;
 };
 

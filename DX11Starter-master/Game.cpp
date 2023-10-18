@@ -42,6 +42,7 @@ Game::Game(HINSTANCE hInstance)
 	printf("Console window created successfully.  Feel free to printf() here.\n");
 #endif
 
+	//Cameras
 	std::shared_ptr<Camera> camera = std::make_shared<Camera>(	(float)this->windowWidth / this->windowHeight, 
 		DirectX::XMFLOAT3(0.0f, 0.0f, -1.0f), 45.0f, 0.01f, 1000.0f, 3.0f, 0.01f, false);
 
@@ -54,6 +55,9 @@ Game::Game(HINSTANCE hInstance)
 	activeCameraIndex = 0;
 
 	cameras = { camera, camera1, camera2 };
+
+	//Lights
+	ambientColor = XMFLOAT3(0.1, 0.1, 0.25);
 }
 
 // --------------------------------------------------------
@@ -125,6 +129,13 @@ void Game::Init()
 		0.0f, 1.0f, 0.0f, 0.0f,
 		0.0f, 0.0f, 1.0f, 0.0f,
 		0.0f, 0.0f, 0.0f, 1.0f);
+
+	//Lights
+	directionalLight = {};
+	directionalLight.Type = LIGHT_TYPE_DIRECTIONAL;
+	directionalLight.Direction = XMFLOAT3(1.0f, -1.0f, 0.0f);
+	directionalLight.Color = XMFLOAT3(0.2f, 0.2f, 1.0f);
+	directionalLight.Intensity = 1.0f;
 
 	// Initialize ImGui itself & platform/renderer backends
 	IMGUI_CHECKVERSION();
@@ -269,21 +280,24 @@ void Game::CreateGeometry()
 
 	//Create Materials
 	material = std::make_shared<Material>(
-		XMFLOAT4(1.0, 1.0, 1.0, 1.0),
+		XMFLOAT4(1.0f, 0.0f, 1.0f, 1.0f),
+		0.0,
 		pixelShader,
 		vertexShader);
 	material1 = std::make_shared<Material>(
-		XMFLOAT4(0.0, 1.0, 1.0, 1.0),
+		XMFLOAT4(1.0f, 0.0f, 1.0f, 1.0f),
+		0.5,
 		pixelShader,
 		vertexShader);
 	material2 = std::make_shared<Material>(
-		XMFLOAT4(1.0, 1.0, 0.0, 1.0),
+		XMFLOAT4(1.0f, 0.0f, 1.0f, 1.0f),
+		1.0,
 		psCustom,
 		vertexShader);
 
 	std::shared_ptr<Entity> entity = std::make_shared<Entity>(triangle, material2);
 	std::shared_ptr<Entity> entity1 = std::make_shared<Entity>(
-		std::make_shared<Mesh>(FixPath(L"../../Assets/Models/torus.obj").c_str(), device, context), material2);
+		std::make_shared<Mesh>(FixPath(L"../../Assets/Models/torus.obj").c_str(), device, context), material1);
 	std::shared_ptr<Entity> entity2 = std::make_shared<Entity>(triangle2, material);
 	std::shared_ptr<Entity> entity3 = std::make_shared<Entity>(triangle3, material1);
 	std::shared_ptr<Entity> entity4 = std::make_shared<Entity>(
@@ -362,6 +376,7 @@ void Game::Draw(float deltaTime, float totalTime)
 		
 		std::shared_ptr<SimpleVertexShader> vs = mat->GetVertexShader();
 		vs->SetMatrix4x4("world", entities[i]->GetTransform()->GetWorldMatrix());
+		vs->SetMatrix4x4("worldInverseTranspose", entities[i]->GetTransform()->GetWorldInverseTransposeMatrix());
 		vs->SetMatrix4x4("view", cameras[activeCameraIndex]->GetViewMatrix());
 		vs->SetMatrix4x4("projection", cameras[activeCameraIndex]->GetProjectionMatrix());
 
@@ -369,6 +384,10 @@ void Game::Draw(float deltaTime, float totalTime)
 
 		std::shared_ptr<SimplePixelShader> ps = mat->GetPixelShader();
 		ps->SetFloat4("colorTint", mat->GetColorTint());
+		ps->SetFloat3("cameraPos", cameras[activeCameraIndex]->GetTransform()->GetPosition());
+		ps->SetFloat("roughness", mat->GetRoughness());
+		ps->SetFloat3("ambient", ambientColor);
+		ps->SetData("directionalLight", &directionalLight, sizeof(Light));
 
 		ps->CopyAllBufferData();
 		

@@ -1,0 +1,18 @@
+#pragma once
+#define LIGHT_TYPE_DIRECTIONAL 0
+#define LIGHT_TYPE_POINTL 1
+#define LIGHT_TYPE_SPOT 2
+
+#include <DirectXMath.h>
+
+struct Light
+{
+	int Type;
+	DirectX::XMFLOAT3 Direction;
+	float Range;
+	DirectX::XMFLOAT3 Position;
+	float Intensity;
+	DirectX::XMFLOAT3 Color;
+	float SpotFalloff;
+	DirectX::XMFLOAT3 Padding;
+};

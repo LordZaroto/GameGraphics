@@ -1,22 +1,13 @@
+#include "ShaderHelper.hlsli"
+
 cbuffer ExternalData : register(b0)
 {
     float4 colorTint;
+    float3 cameraPos;
+    float roughness;
+    float3 ambient;
+    Light directionalLight;
 }
-// Struct representing the data we expect to receive from earlier pipeline stages
-// - Should match the output of our corresponding vertex shader
-// - The name of the struct itself is unimportant
-// - The variable names don't have to match other shaders (just the semantics)
-// - Each variable must have a semantic, which defines its usage
-struct VertexToPixel
-{
-	// Data type
-	//  |
-	//  |   Name          Semantic
-	//  |    |                |
-	//  v    v                v
-	float4 screenPosition	: SV_POSITION;
-    float2 uv				: TEXCOORD; //UVs
-};
 
 // --------------------------------------------------------
 // The entry point (main method) for our pixel shader
@@ -29,12 +20,27 @@ struct VertexToPixel
 // --------------------------------------------------------
 float4 main(VertexToPixel input) : SV_TARGET
 {
-	// Set up output struct
-    //VertexToPixel output;
-	
-	// Just return the input color
-	// - This color (like most values passing through the rasterizer) is 
-	//   interpolated for each pixel between the corresponding vertices 
-	//   of the triangle we're rendering
-    return colorTint; //float4(input.uv, 0, 1)
+    input.normal = normalize(input.normal);
+    
+    float3 diffuse = saturate(dot(input.normal, -directionalLight.direction)) * 
+                    (directionalLight.color * directionalLight.intensity * colorTint.xyz) +
+                    (ambient * colorTint.xyz);
+    
+    float V = normalize(directionalLight.position - input.worldPosition);
+    float R = reflect(directionalLight.direction, input.normal);
+    float specExponent = (1.0f - roughness) * MAX_SPECULAR_EXPONENT;
+    
+    float spec = 0;
+    
+    if (specExponent > 0.05f)
+    {
+        spec = pow(saturate(dot(R, V)), specExponent);
+    }
+    
+    float3 light = colorTint.xyz * diffuse + spec;
+    
+    //return float4(roughness.rrr, 1);
+    //return float4(input.uv, 0, 1);
+    //return float4(input.normal, 1.0);
+    return float4(light, 1);
 }

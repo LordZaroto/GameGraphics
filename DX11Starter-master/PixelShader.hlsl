@@ -14,6 +14,12 @@ cbuffer ExternalData : register(b0)
     Light pointLight2;
 }
 
+//Need at least 1 sampler for textures
+SamplerState BasicSampler : register(s0);
+
+//Textures
+Texture2D DiffuseTexture : register(t0);
+
 // --------------------------------------------------------
 // The entry point (main method) for our pixel shader
 // 
@@ -25,6 +31,8 @@ cbuffer ExternalData : register(b0)
 // --------------------------------------------------------
 float4 main(VertexToPixel input) : SV_TARGET
 {
+    return DiffuseTexture.Sample(BasicSampler, input.uv);
+    
     input.normal = normalize(input.normal);
     float V = normalize(cameraPos - input.worldPosition);
     float specExponent = (1.0f - roughness) * MAX_SPECULAR_EXPONENT;

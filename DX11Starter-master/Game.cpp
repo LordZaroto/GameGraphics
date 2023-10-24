@@ -7,6 +7,8 @@
 #include <memory>
 #include <vector>
 
+#include "WICTextureLoader.h"
+
 // Needed for a helper function to load pre-compiled shader files
 #pragma comment(lib, "d3dcompiler.lib")
 #include <d3dcompiler.h>
@@ -304,6 +306,18 @@ void Game::CreateGeometry()
 	std::shared_ptr<Mesh> triangle3 = std::make_shared<Mesh>(verts3, verts3.size(), indicies3,
 		indicies3.size(), device, context);
 
+	//Textures
+	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/Textures/gogeta.png").c_str(), 0, textureSRV.GetAddressOf());
+
+	//Samplers
+	D3D11_SAMPLER_DESC samplerDesc = {};
+	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
+	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	device->CreateSamplerState(&samplerDesc, sampler.GetAddressOf());
+	
 	//Create Materials
 	material = std::make_shared<Material>(
 		XMFLOAT4(1.0f, 0.0f, 1.0f, 1.0f),
@@ -424,6 +438,9 @@ void Game::Draw(float deltaTime, float totalTime)
 		ps->SetData("directionalLight3", &directionalLight3, sizeof(Light));
 		ps->SetData("pointLight", &pointLight, sizeof(Light));
 		ps->SetData("pointLight2", &pointLight2, sizeof(Light));
+
+		ps->SetSamplerState("BasicSampler", sampler);
+		ps->SetShaderResourceView("DiffuseTexture", textureSRV);
 
 		ps->CopyAllBufferData();
 		

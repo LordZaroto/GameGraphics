@@ -6,7 +6,12 @@ cbuffer ExternalData : register(b0)
     float3 cameraPos;
     float roughness;
     float3 ambient;
+    //Light lights[5];
     Light directionalLight;
+    Light directionalLight2;
+    Light directionalLight3;
+    Light pointLight;
+    Light pointLight2;
 }
 
 // --------------------------------------------------------
@@ -21,23 +26,46 @@ cbuffer ExternalData : register(b0)
 float4 main(VertexToPixel input) : SV_TARGET
 {
     input.normal = normalize(input.normal);
-    
-    float3 diffuse = saturate(dot(input.normal, -directionalLight.direction)) * 
-                    (directionalLight.color * directionalLight.intensity * colorTint.xyz) +
-                    (ambient * colorTint.xyz);
-    
-    float V = normalize(directionalLight.position - input.worldPosition);
-    float R = reflect(directionalLight.direction, input.normal);
+    float V = normalize(cameraPos - input.worldPosition);
     float specExponent = (1.0f - roughness) * MAX_SPECULAR_EXPONENT;
+    float3 light = float3(0, 0, 0);
     
-    float spec = 0;
-    
-    if (specExponent > 0.05f)
+    /*for (int i = 0; i < 5; i++)
     {
-        spec = pow(saturate(dot(R, V)), specExponent);
-    }
+        [branch] switch (lights[i].type)
+        {
+            case LIGHT_TYPE_DIRECTIONAL:
+                light += DiffuseSpecCalc(lights[i], input.normal, colorTint, ambient, specExponent, V, lights[i].direction);
+                break;
+            
+            case LIGHT_TYPE_POINT:
+                float3 direction = normalize(input.worldPosition - lights[i].position);
+                light += DiffuseSpecCalc(lights[i], input.normal, colorTint, ambient, specExponent, V, direction)
+                         * Attenuate(lights[i], input.worldPosition);
+                break;
+            
+            case LIGHT_TYPE_SPOT:
+                light += 0;
+                break;
+        }
+    }*/
     
-    float3 light = colorTint.xyz * diffuse + spec;
+    //Directional Light
+    light += DiffuseSpecCalc(directionalLight, input.normal, colorTint, ambient, specExponent, V, directionalLight.direction);
+    light += DiffuseSpecCalc(directionalLight2, input.normal, colorTint, ambient, specExponent, V, directionalLight2.direction);
+    light += DiffuseSpecCalc(directionalLight3, input.normal, colorTint, ambient, specExponent, V, directionalLight3.direction);
+    
+    //Point Light
+    float3 direction = normalize(input.worldPosition - pointLight.position);
+    light += DiffuseSpecCalc(pointLight, input.normal, colorTint, ambient, specExponent, V, direction)
+             * Attenuate(pointLight, input.worldPosition);
+    
+    direction = normalize(input.worldPosition - pointLight2.position);
+    light += DiffuseSpecCalc(pointLight2, input.normal, colorTint, ambient, specExponent, V, direction)
+             * Attenuate(pointLight, input.worldPosition);
+    
+    light *= colorTint.xyz;
+    //light += ambient;
     
     //return float4(roughness.rrr, 1);
     //return float4(input.uv, 0, 1);

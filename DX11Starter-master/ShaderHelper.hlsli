@@ -1,7 +1,7 @@
 #ifndef __GGP_SHADER_INCLUDES__
 #define __GGP_SHADER_INCLUDES__
 #define LIGHT_TYPE_DIRECTIONAL 0
-#define LIGHT_TYPE_POINTL 1
+#define LIGHT_TYPE_POINT 1
 #define LIGHT_TYPE_SPOT 2
 #define MAX_SPECULAR_EXPONENT 256.0f;
 
@@ -50,6 +50,31 @@ float3 palette(float t)
     float3 d = float3(1.217, 1.887, 0.358);
     
     return a + b * cos(6.28318 * (c * t + d));
+};
+
+float3 DiffuseSpecCalc(Light light, float3 normal, float4 colorTint, float3 ambient, float specExponent, float V, float3 direction)
+{
+    float3 diffuse = saturate(dot(normal, -direction)) *
+                    (light.color * light.intensity * colorTint.xyz) +
+                    (ambient * colorTint.xyz);
+    
+    float R = reflect(direction, normal);
+    
+    float spec = 0;
+    
+    if (specExponent > 0.05f)
+    {
+        spec = pow(saturate(dot(R, V)), specExponent) * (light.color * light.intensity * colorTint.xyz);
+    }
+    
+    return float3(diffuse + spec);
+};
+
+float3 Attenuate(Light light, float3 worldPos)
+{
+    float dist = distance(light.position, worldPos);
+    float att = saturate(1.0f - (dist * dist / (light.range * light.range)));
+    return att * att;
 };
 
 #endif

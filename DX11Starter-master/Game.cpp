@@ -44,7 +44,7 @@ Game::Game(HINSTANCE hInstance)
 
 	//Cameras
 	std::shared_ptr<Camera> camera = std::make_shared<Camera>(	(float)this->windowWidth / this->windowHeight, 
-		DirectX::XMFLOAT3(0.0f, 0.0f, -1.0f), 45.0f, 0.01f, 1000.0f, 3.0f, 0.01f, false);
+		DirectX::XMFLOAT3(0.0f, 0.0f, -4.0f), 45.0f, 0.01f, 1000.0f, 3.0f, 0.01f, false);
 
 	std::shared_ptr<Camera> camera1 = std::make_shared<Camera>((float)this->windowWidth / this->windowHeight,
 		DirectX::XMFLOAT3(0.0f, 2.0f, -3.0f), 108.0f, 0.1f, 100.0f, 3.0f, 0.01f, false);
@@ -55,9 +55,6 @@ Game::Game(HINSTANCE hInstance)
 	activeCameraIndex = 0;
 
 	cameras = { camera, camera1, camera2 };
-
-	//Lights
-	ambientColor = XMFLOAT3(0.1, 0.1, 0.25);
 }
 
 // --------------------------------------------------------
@@ -131,11 +128,40 @@ void Game::Init()
 		0.0f, 0.0f, 0.0f, 1.0f);
 
 	//Lights
+	ambientColor = XMFLOAT3(0.1, 0.1, 0.25);
+
 	directionalLight = {};
 	directionalLight.Type = LIGHT_TYPE_DIRECTIONAL;
-	directionalLight.Direction = XMFLOAT3(1.0f, -1.0f, 0.0f);
-	directionalLight.Color = XMFLOAT3(0.2f, 0.2f, 1.0f);
+	directionalLight.Direction = XMFLOAT3(1.0f, 0.0f, 0.0f);
+	directionalLight.Color = XMFLOAT3(1.0f, 0.0f, 0.0f);
 	directionalLight.Intensity = 1.0f;
+
+	directionalLight2 = {};
+	directionalLight2.Type = LIGHT_TYPE_DIRECTIONAL;
+	directionalLight2.Direction = XMFLOAT3(0.0f, -1.0f, 0.0f);
+	directionalLight2.Color = XMFLOAT3(0.0f, 1.0f, 0.0f);
+	directionalLight2.Intensity = 1.0f;
+
+	directionalLight3 = {};
+	directionalLight3.Type = LIGHT_TYPE_DIRECTIONAL;
+	directionalLight3.Direction = XMFLOAT3(-1.0f, 0.0f, 0.0f);
+	directionalLight3.Color = XMFLOAT3(0.0f, 0.0f, 1.0f);
+	directionalLight3.Intensity = 1.0f;
+	
+	pointLight = {};
+	pointLight.Type = LIGHT_TYPE_POINT;
+	pointLight.Position = XMFLOAT3(-3.0f, 2.0f, -2.0f);
+	pointLight.Color = XMFLOAT3(0.0f, 0.5f, 0.8f);
+	pointLight.Intensity = 1.0f;
+	pointLight.Range = 10.0f;
+
+	pointLight2 = {};
+	pointLight2.Type = LIGHT_TYPE_POINT;
+	pointLight2.Position = XMFLOAT3(3.0f, -2.0f, -2.0f);
+	pointLight2.Color = XMFLOAT3(0.8f, 0.5f, 0.0f);
+	pointLight2.Intensity = 1.0f;
+	pointLight.Range = 10.0f;
+
 
 	// Initialize ImGui itself & platform/renderer backends
 	IMGUI_CHECKVERSION();
@@ -285,8 +311,8 @@ void Game::CreateGeometry()
 		pixelShader,
 		vertexShader);
 	material1 = std::make_shared<Material>(
-		XMFLOAT4(1.0f, 0.0f, 1.0f, 1.0f),
-		0.5,
+		XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f),
+		0.15,
 		pixelShader,
 		vertexShader);
 	material2 = std::make_shared<Material>(
@@ -295,17 +321,23 @@ void Game::CreateGeometry()
 		psCustom,
 		vertexShader);
 
-	std::shared_ptr<Entity> entity = std::make_shared<Entity>(triangle, material2);
+	std::shared_ptr<Entity> entity = std::make_shared<Entity>(
+		std::make_shared<Mesh>(FixPath(L"../../Assets/Models/sphere.obj").c_str(), device, context), material1);
 	std::shared_ptr<Entity> entity1 = std::make_shared<Entity>(
 		std::make_shared<Mesh>(FixPath(L"../../Assets/Models/torus.obj").c_str(), device, context), material1);
-	std::shared_ptr<Entity> entity2 = std::make_shared<Entity>(triangle2, material);
-	std::shared_ptr<Entity> entity3 = std::make_shared<Entity>(triangle3, material1);
+	std::shared_ptr<Entity> entity2 = std::make_shared<Entity>(
+		std::make_shared<Mesh>(FixPath(L"../../Assets/Models/cylinder.obj").c_str(), device, context), material1);
+	std::shared_ptr<Entity> entity3 = std::make_shared<Entity>(
+		std::make_shared<Mesh>(FixPath(L"../../Assets/Models/helix.obj").c_str(), device, context), material1);
 	std::shared_ptr<Entity> entity4 = std::make_shared<Entity>(
-		std::make_shared<Mesh>(FixPath(L"../../Assets/Models/sphere.obj").c_str(), device, context), material2);
+		std::make_shared<Mesh>(FixPath(L"../../Assets/Models/cube.obj").c_str(), device, context), material1);
 
 	//Move entities
-	entity4->GetTransform()->SetPosition(XMFLOAT3(2.0, 0.0, 0.0));
-	entity1->GetTransform()->SetPosition(XMFLOAT3(-2.0, 0.0, 0.0));
+	entity->GetTransform()->SetPosition(XMFLOAT3(-5.0, 0.0, 0.0));
+	entity1->GetTransform()->SetPosition(XMFLOAT3(-2.5, 0.0, 0.0));
+	entity2->GetTransform()->SetPosition(XMFLOAT3(0.0, 0.0, 0.0));
+	entity3->GetTransform()->SetPosition(XMFLOAT3(2.5, 0.0, 0.0));
+	entity4->GetTransform()->SetPosition(XMFLOAT3(5.0, 0.0, 0.0));
 	
 	//Add all entities to the entity vector
 	entities.push_back(entity);
@@ -388,6 +420,10 @@ void Game::Draw(float deltaTime, float totalTime)
 		ps->SetFloat("roughness", mat->GetRoughness());
 		ps->SetFloat3("ambient", ambientColor);
 		ps->SetData("directionalLight", &directionalLight, sizeof(Light));
+		ps->SetData("directionalLight2", &directionalLight2, sizeof(Light));
+		ps->SetData("directionalLight3", &directionalLight3, sizeof(Light));
+		ps->SetData("pointLight", &pointLight, sizeof(Light));
+		ps->SetData("pointLight2", &pointLight2, sizeof(Light));
 
 		ps->CopyAllBufferData();
 		
@@ -586,6 +622,42 @@ void Game::ImGuiUpdate(float deltaTime, float totalTime)
 		}
 	}
 
+	//Light colors
+	static float light[3] = { directionalLight.Color.x, directionalLight.Color.y, directionalLight.Color.z};
+	static float light2[3] = { directionalLight2.Color.x, directionalLight2.Color.y, directionalLight2.Color.z };
+	static float light3[3] = { directionalLight3.Color.x, directionalLight3.Color.y, directionalLight3.Color.z };
+	static float light4[3] = { pointLight.Color.x, pointLight.Color.y, pointLight.Color.z };
+	static float light5[3] = { pointLight2.Color.x, pointLight2.Color.y, pointLight2.Color.z };
+
+	if (ImGui::CollapsingHeader("Lights"))
+	{
+		if (ImGui::TreeNode("Light 0"))
+		{
+			ImGui::ColorEdit3("Color", light);
+			ImGui::TreePop();
+		}
+		if (ImGui::TreeNode("Light 1"))
+		{
+			ImGui::ColorEdit3("Color", light2);
+			ImGui::TreePop();
+		}
+		if (ImGui::TreeNode("Light 2"))
+		{
+			ImGui::ColorEdit3("Color", light3);
+			ImGui::TreePop();
+		}
+		if (ImGui::TreeNode("Light 3"))
+		{
+			ImGui::ColorEdit3("Color", light4);
+			ImGui::TreePop();
+		}
+		if (ImGui::TreeNode("Light 4"))
+		{
+			ImGui::ColorEdit3("Color", light5);
+			ImGui::TreePop();
+		}
+	}
+
 	//Set the ImGui changes
 	entities[0]->GetTransform()->SetPosition((XMFLOAT3)pos);
 	entities[0]->GetTransform()->SetRotation((XMFLOAT3)rot);
@@ -611,6 +683,27 @@ void Game::ImGuiUpdate(float deltaTime, float totalTime)
 	IMGUI_colorTint.y = vec4f[1];
 	IMGUI_colorTint.z = vec4f[2];
 	IMGUI_colorTint.w = vec4f[3];
+
+	//Light colors
+	directionalLight.Color.x = light[0];
+	directionalLight.Color.y = light[1];
+	directionalLight.Color.z = light[2];
+
+	directionalLight2.Color.x = light2[0];
+	directionalLight2.Color.y = light2[1];
+	directionalLight2.Color.z = light2[2];
+
+	directionalLight3.Color.x = light3[0];
+	directionalLight3.Color.y = light3[1];
+	directionalLight3.Color.z = light3[2];
+
+	pointLight.Color.x = light4[0];
+	pointLight.Color.y = light4[1];
+	pointLight.Color.z = light4[2];
+
+	pointLight2.Color.x = light5[0];
+	pointLight2.Color.y = light5[1];
+	pointLight2.Color.z = light5[2];
 
 	ImGui::End();
 }

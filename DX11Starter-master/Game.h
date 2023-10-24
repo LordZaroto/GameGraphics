@@ -68,5 +68,9 @@ private:
 	//Lights
 	DirectX::XMFLOAT3 ambientColor;
 	Light directionalLight;
+	Light directionalLight2;
+	Light directionalLight3;
+	Light pointLight;
+	Light pointLight2;
 };
 

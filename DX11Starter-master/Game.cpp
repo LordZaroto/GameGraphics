@@ -307,13 +307,15 @@ void Game::CreateGeometry()
 		indicies3.size(), device, context);
 
 	//Textures
-	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/Textures/gogeta.png").c_str(), 0, textureSRV.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/Textures/brokentiles.png").c_str(), 0, brokentiles.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/Textures/rustymetal.png").c_str(), 0, rustymetal.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/Textures/tiles.png").c_str(), 0, tiles.GetAddressOf());
 
 	//Samplers
 	D3D11_SAMPLER_DESC samplerDesc = {};
-	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
-	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
-	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+	samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
 	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
 	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 	device->CreateSamplerState(&samplerDesc, sampler.GetAddressOf());
@@ -321,28 +323,42 @@ void Game::CreateGeometry()
 	//Create Materials
 	material = std::make_shared<Material>(
 		XMFLOAT4(1.0f, 0.0f, 1.0f, 1.0f),
-		0.0,
+		1.0f,
+		XMFLOAT2(1.0f, 1.0f),
+		XMFLOAT2(0.3f, 0.5f),
 		pixelShader,
 		vertexShader);
 	material1 = std::make_shared<Material>(
 		XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f),
-		0.15,
+		0.15f,
+		XMFLOAT2(2.0f, 2.0f),
+		XMFLOAT2(0.1f, 0.1f),
 		pixelShader,
 		vertexShader);
 	material2 = std::make_shared<Material>(
 		XMFLOAT4(1.0f, 0.0f, 1.0f, 1.0f),
-		1.0,
-		psCustom,
+		1.0f,
+		XMFLOAT2(0.5f, 0.5f),
+		XMFLOAT2(0.0f, 0.0f),
+		pixelShader,
 		vertexShader);
+
+	//Add Textures and Samplers to Materials
+	material->AddSampler("BasicSampler", sampler);
+	material1->AddSampler("BasicSampler", sampler);
+	material2->AddSampler("BasicSampler", sampler);
+	material->AddTextureSRV("DiffuseTexture", tiles);
+	material1->AddTextureSRV("DiffuseTexture", brokentiles);
+	material2->AddTextureSRV("DiffuseTexture", rustymetal);
 
 	std::shared_ptr<Entity> entity = std::make_shared<Entity>(
 		std::make_shared<Mesh>(FixPath(L"../../Assets/Models/sphere.obj").c_str(), device, context), material1);
 	std::shared_ptr<Entity> entity1 = std::make_shared<Entity>(
-		std::make_shared<Mesh>(FixPath(L"../../Assets/Models/torus.obj").c_str(), device, context), material1);
+		std::make_shared<Mesh>(FixPath(L"../../Assets/Models/torus.obj").c_str(), device, context), material);
 	std::shared_ptr<Entity> entity2 = std::make_shared<Entity>(
 		std::make_shared<Mesh>(FixPath(L"../../Assets/Models/cylinder.obj").c_str(), device, context), material1);
 	std::shared_ptr<Entity> entity3 = std::make_shared<Entity>(
-		std::make_shared<Mesh>(FixPath(L"../../Assets/Models/helix.obj").c_str(), device, context), material1);
+		std::make_shared<Mesh>(FixPath(L"../../Assets/Models/helix.obj").c_str(), device, context), material2);
 	std::shared_ptr<Entity> entity4 = std::make_shared<Entity>(
 		std::make_shared<Mesh>(FixPath(L"../../Assets/Models/cube.obj").c_str(), device, context), material1);
 
@@ -433,14 +449,15 @@ void Game::Draw(float deltaTime, float totalTime)
 		ps->SetFloat3("cameraPos", cameras[activeCameraIndex]->GetTransform()->GetPosition());
 		ps->SetFloat("roughness", mat->GetRoughness());
 		ps->SetFloat3("ambient", ambientColor);
+		ps->SetFloat2("scale", mat->GetScale());
+		ps->SetFloat2("offset", mat->GetOffset());
 		ps->SetData("directionalLight", &directionalLight, sizeof(Light));
 		ps->SetData("directionalLight2", &directionalLight2, sizeof(Light));
 		ps->SetData("directionalLight3", &directionalLight3, sizeof(Light));
 		ps->SetData("pointLight", &pointLight, sizeof(Light));
 		ps->SetData("pointLight2", &pointLight2, sizeof(Light));
 
-		ps->SetSamplerState("BasicSampler", sampler);
-		ps->SetShaderResourceView("DiffuseTexture", textureSRV);
+		mat->PrepareMaterial();
 
 		ps->CopyAllBufferData();
 		

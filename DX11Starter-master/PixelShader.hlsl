@@ -6,6 +6,8 @@ cbuffer ExternalData : register(b0)
     float3 cameraPos;
     float roughness;
     float3 ambient;
+    float2 scale;
+    float2 offset;
     //Light lights[5];
     Light directionalLight;
     Light directionalLight2;
@@ -31,7 +33,14 @@ Texture2D DiffuseTexture : register(t0);
 // --------------------------------------------------------
 float4 main(VertexToPixel input) : SV_TARGET
 {
-    return DiffuseTexture.Sample(BasicSampler, input.uv);
+    //Scale
+    float2 scaleCenter = float2(0.5f, 0.5f);
+    input.uv = (input.uv - scaleCenter) * scale + scaleCenter;
+    
+    //Offset
+    input.uv += offset;
+    
+    float3 diffuse = DiffuseTexture.Sample(BasicSampler, input.uv);
     
     input.normal = normalize(input.normal);
     float V = normalize(cameraPos - input.worldPosition);
@@ -73,10 +82,10 @@ float4 main(VertexToPixel input) : SV_TARGET
              * Attenuate(pointLight, input.worldPosition);
     
     light *= colorTint.xyz;
-    //light += ambient;
+    light += ambient;
     
     //return float4(roughness.rrr, 1);
     //return float4(input.uv, 0, 1);
     //return float4(input.normal, 1.0);
-    return float4(light, 1);
+    return float4(light * diffuse, 1);
 }

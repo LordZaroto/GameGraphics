@@ -15,6 +15,7 @@ struct VertexShaderInput
     float3 localPosition : POSITION; // XYZ position
     float3 normal : NORMAL; //Normals
     float2 uv : TEXCOORD; //UVs
+    float3 tangent : TANGENT;
 };
 
 struct VertexToPixel
@@ -27,6 +28,7 @@ struct VertexToPixel
     float4 screenPosition : SV_POSITION;
     float2 uv : TEXCOORD; //UVs
     float3 normal : NORMAL;
+    float3 tangent : TANGENT;
     float3 worldPosition : POSITION;
 };
 
@@ -65,6 +67,16 @@ float3 DiffuseSpecCalc(Light light, float3 normal, float4 colorTint, float specE
     {
         spec = pow(saturate(dot(R, V)), specExponent) * (light.color * light.intensity * colorTint.xyz);
     }
+    
+    // Cut the specular if the diffuse contribution is zero
+    // - any() returns 1 if any component of the param is non-zero
+    // - In this case, diffuse is a single float value
+    // - Meaning any() returns 1 if diffuse itself is non-zero
+    // - In other words:
+    // - If the diffuse amount is 0, any(diffuse) returns 0
+    // - If the diffuse amount is != 0, any(diffuse) returns 1
+    // - So when diffuse is 0, specular becomes 0
+    spec *= any(diffuse);
     
     return float3(diffuse + spec);
 };

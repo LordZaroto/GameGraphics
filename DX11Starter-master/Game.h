@@ -74,9 +74,10 @@ private:
 	Light pointLight2;
 
 	//Textures
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> brokentiles;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> rustymetal;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> tiles;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cushionDiffuse;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cushionNormal;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> rockDiffuse;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> rockNormal;
 	Microsoft::WRL::ComPtr<ID3D11SamplerState> sampler;
 };
 

@@ -38,6 +38,9 @@ VertexToPixel main( VertexShaderInput input )
 
 	// Pass UVs to the pipe
     output.uv = input.uv;
+	
+	// Pass Tangets to the pipe
+    output.tangent = mul((float3x3) world, input.tangent);
 
 	// Whatever we return will make its way through the pipeline to the
 	// next programmable stage we're using (the pixel shader for now)

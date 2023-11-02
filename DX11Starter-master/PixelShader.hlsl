@@ -21,6 +21,7 @@ SamplerState BasicSampler : register(s0);
 
 //Textures
 Texture2D DiffuseTexture : register(t0);
+Texture2D NormalMap : register(t1);
 
 // --------------------------------------------------------
 // The entry point (main method) for our pixel shader
@@ -40,9 +41,16 @@ float4 main(VertexToPixel input) : SV_TARGET
     //Offset
     input.uv += offset;
     
-    float3 diffuse = DiffuseTexture.Sample(BasicSampler, input.uv);
+    //Normal
+    float3 unpackedNormal = normalize(NormalMap.Sample(BasicSampler, input.uv).rgb * 2 - 1);
+    float3 N = normalize(input.normal);
+    float3 T = normalize(input.tangent);
+    T = normalize(T - N * dot(T, N));
+    float3 B = cross(T, N);
+    float3x3 TBN = float3x3(T, B, N);
+    input.normal = mul(unpackedNormal, TBN);
     
-    input.normal = normalize(input.normal);
+    float3 diffuse = DiffuseTexture.Sample(BasicSampler, input.uv);
     float3 V = normalize(cameraPos - input.worldPosition);
     float specExponent = (1.0f - roughness) * MAX_SPECULAR_EXPONENT;
     float3 light = float3(0, 0, 0);

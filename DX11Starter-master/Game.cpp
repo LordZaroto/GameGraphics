@@ -307,9 +307,10 @@ void Game::CreateGeometry()
 		indicies3.size(), device, context);
 
 	//Textures
-	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/Textures/brokentiles.png").c_str(), 0, brokentiles.GetAddressOf());
-	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/Textures/rustymetal.png").c_str(), 0, rustymetal.GetAddressOf());
-	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/Textures/tiles.png").c_str(), 0, tiles.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/Textures/cushion.png").c_str(), 0, cushionDiffuse.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/Textures/cushion_normals.png").c_str(), 0, cushionNormal.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/Textures/rock.png").c_str(), 0, rockDiffuse.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/Textures/rock_normals.png").c_str(), 0, rockNormal.GetAddressOf());
 
 	//Samplers
 	D3D11_SAMPLER_DESC samplerDesc = {};
@@ -323,22 +324,15 @@ void Game::CreateGeometry()
 	//Create Materials
 	material = std::make_shared<Material>(
 		XMFLOAT4(1.0f, 0.0f, 1.0f, 1.0f),
-		1.0f,
-		XMFLOAT2(1.0f, 1.0f),
-		XMFLOAT2(0.3f, 0.5f),
+		0.99f,
+		XMFLOAT2(2.0f, 2.0f),
+		XMFLOAT2(0.0f, 0.0f),
 		pixelShader,
 		vertexShader);
 	material1 = std::make_shared<Material>(
 		XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f),
-		0.15f,
+		0.99f,
 		XMFLOAT2(2.0f, 2.0f),
-		XMFLOAT2(0.1f, 0.1f),
-		pixelShader,
-		vertexShader);
-	material2 = std::make_shared<Material>(
-		XMFLOAT4(1.0f, 0.0f, 1.0f, 1.0f),
-		1.0f,
-		XMFLOAT2(0.5f, 0.5f),
 		XMFLOAT2(0.0f, 0.0f),
 		pixelShader,
 		vertexShader);
@@ -346,19 +340,19 @@ void Game::CreateGeometry()
 	//Add Textures and Samplers to Materials
 	material->AddSampler("BasicSampler", sampler);
 	material1->AddSampler("BasicSampler", sampler);
-	material2->AddSampler("BasicSampler", sampler);
-	material->AddTextureSRV("DiffuseTexture", tiles);
-	material1->AddTextureSRV("DiffuseTexture", brokentiles);
-	material2->AddTextureSRV("DiffuseTexture", rustymetal);
+	material->AddTextureSRV("DiffuseTexture", cushionDiffuse);
+	material->AddTextureSRV("NormalMap", cushionNormal);
+	material1->AddTextureSRV("DiffuseTexture", rockDiffuse);
+	material1->AddTextureSRV("NormalMap", rockNormal);
 
 	std::shared_ptr<Entity> entity = std::make_shared<Entity>(
 		std::make_shared<Mesh>(FixPath(L"../../Assets/Models/sphere.obj").c_str(), device, context), material1);
 	std::shared_ptr<Entity> entity1 = std::make_shared<Entity>(
 		std::make_shared<Mesh>(FixPath(L"../../Assets/Models/torus.obj").c_str(), device, context), material);
 	std::shared_ptr<Entity> entity2 = std::make_shared<Entity>(
-		std::make_shared<Mesh>(FixPath(L"../../Assets/Models/cylinder.obj").c_str(), device, context), material1);
+		std::make_shared<Mesh>(FixPath(L"../../Assets/Models/cylinder.obj").c_str(), device, context), material);
 	std::shared_ptr<Entity> entity3 = std::make_shared<Entity>(
-		std::make_shared<Mesh>(FixPath(L"../../Assets/Models/helix.obj").c_str(), device, context), material2);
+		std::make_shared<Mesh>(FixPath(L"../../Assets/Models/helix.obj").c_str(), device, context), material1);
 	std::shared_ptr<Entity> entity4 = std::make_shared<Entity>(
 		std::make_shared<Mesh>(FixPath(L"../../Assets/Models/cube.obj").c_str(), device, context), material1);
 

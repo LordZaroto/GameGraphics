@@ -43,7 +43,7 @@ float4 main(VertexToPixel input) : SV_TARGET
     float3 diffuse = DiffuseTexture.Sample(BasicSampler, input.uv);
     
     input.normal = normalize(input.normal);
-    float V = normalize(cameraPos - input.worldPosition);
+    float3 V = normalize(cameraPos - input.worldPosition);
     float specExponent = (1.0f - roughness) * MAX_SPECULAR_EXPONENT;
     float3 light = float3(0, 0, 0);
     
@@ -68,17 +68,17 @@ float4 main(VertexToPixel input) : SV_TARGET
     }*/
     
     //Directional Light
-    light += DiffuseSpecCalc(directionalLight, input.normal, colorTint, ambient, specExponent, V, directionalLight.direction);
-    light += DiffuseSpecCalc(directionalLight2, input.normal, colorTint, ambient, specExponent, V, directionalLight2.direction);
-    light += DiffuseSpecCalc(directionalLight3, input.normal, colorTint, ambient, specExponent, V, directionalLight3.direction);
+    light += DiffuseSpecCalc(directionalLight, input.normal, colorTint, specExponent, V, directionalLight.direction);
+    light += DiffuseSpecCalc(directionalLight2, input.normal, colorTint, specExponent, V, directionalLight2.direction);
+    light += DiffuseSpecCalc(directionalLight3, input.normal, colorTint, specExponent, V, directionalLight3.direction);
     
     //Point Light
     float3 direction = normalize(input.worldPosition - pointLight.position);
-    light += DiffuseSpecCalc(pointLight, input.normal, colorTint, ambient, specExponent, V, direction)
+    light += DiffuseSpecCalc(pointLight, input.normal, colorTint, specExponent, V, direction)
              * Attenuate(pointLight, input.worldPosition);
     
     direction = normalize(input.worldPosition - pointLight2.position);
-    light += DiffuseSpecCalc(pointLight2, input.normal, colorTint, ambient, specExponent, V, direction)
+    light += DiffuseSpecCalc(pointLight2, input.normal, colorTint, specExponent, V, direction)
              * Attenuate(pointLight, input.worldPosition);
     
     light *= colorTint.xyz;

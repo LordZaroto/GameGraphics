@@ -52,15 +52,14 @@ float3 palette(float t)
     return a + b * cos(6.28318 * (c * t + d));
 };
 
-float3 DiffuseSpecCalc(Light light, float3 normal, float4 colorTint, float3 ambient, float specExponent, float V, float3 direction)
+float3 DiffuseSpecCalc(Light light, float3 normal, float4 colorTint, float specExponent, float3 V, float3 direction)
 {
     float3 diffuse = saturate(dot(normal, -direction)) *
-                    (light.color * light.intensity * colorTint.xyz) +
-                    (ambient * colorTint.xyz);
+                    (light.color * light.intensity * colorTint.xyz);
     
-    float R = reflect(direction, normal);
+    float3 R = reflect(direction, normal);
     
-    float spec = 0;
+    float3 spec = 0;
     
     if (specExponent > 0.05f)
     {

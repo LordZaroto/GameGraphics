@@ -50,7 +50,7 @@ float4 main(VertexToPixel input) : SV_TARGET
     float3x3 TBN = float3x3(T, B, N);
     input.normal = mul(unpackedNormal, TBN);
     
-    float3 diffuse = DiffuseTexture.Sample(BasicSampler, input.uv);
+    float3 diffuse = pow(DiffuseTexture.Sample(BasicSampler, input.uv).rgb, 2.2f);
     float3 V = normalize(cameraPos - input.worldPosition);
     float specExponent = (1.0f - roughness) * MAX_SPECULAR_EXPONENT;
     float3 light = float3(0, 0, 0);

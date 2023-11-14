@@ -95,5 +95,5 @@ float4 main(VertexToPixel input) : SV_TARGET
     //return float4(roughness.rrr, 1);
     //return float4(input.uv, 0, 1);
     //return float4(input.normal, 1.0);
-    return float4(light * diffuse, 1);
+    return float4(pow((light * diffuse), 1.0f / 2.2f), 1);
 }

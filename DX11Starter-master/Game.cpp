@@ -130,7 +130,7 @@ void Game::Init()
 		0.0f, 0.0f, 0.0f, 1.0f);
 
 	//Lights
-	ambientColor = XMFLOAT3(0.1, 0.1, 0.25);
+	ambientColor = XMFLOAT3(0.969f, 0.6f, 0.0f);
 
 	directionalLight = {};
 	directionalLight.Type = LIGHT_TYPE_DIRECTIONAL;
@@ -187,6 +187,8 @@ void Game::LoadShaders()
 	vertexShader = std::make_shared<SimpleVertexShader>(device, context, FixPath(L"VertexShader.cso").c_str());
 	pixelShader = std::make_shared<SimplePixelShader>(device, context, FixPath(L"PixelShader.cso").c_str());
 	psCustom = std::make_shared<SimplePixelShader>(device, context, FixPath(L"CustomPS.cso").c_str());
+	skyPixelShader = std::make_shared<SimplePixelShader>(device, context, FixPath(L"SkyPixelShader.cso").c_str());
+	skyVertexShader = std::make_shared<SimpleVertexShader>(device, context, FixPath(L"SkyVertexShader.cso").c_str());
 }
 
 
@@ -196,116 +198,6 @@ void Game::LoadShaders()
 // --------------------------------------------------------
 void Game::CreateGeometry()
 {
-	// Set up the vertices of the triangle we would like to draw
-	// - We're going to copy this array, exactly as it exists in CPU memory
-	//    over to a Direct3D-controlled data structure on the GPU (the vertex buffer)
-	// - Note: Since we don't have a camera or really any concept of
-	//    a "3d world" yet, we're simply describing positions within the
-	//    bounds of how the rasterizer sees our screen: [-1 to +1] on X and Y
-	// - This means (0,0) is at the very center of the screen.
-	// - These are known as "Normalized Device Coordinates" or "Homogeneous 
-	//    Screen Coords", which are ways to describe a position without
-	//    knowing the exact size (in pixels) of the image/window/etc.  
-	// - Long story short: Resizing the window also resizes the triangle,
-	//    since we're describing the triangle in terms of the window itself
-
-
-	//Colors
-	/*XMFLOAT4 red = XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f);
-	XMFLOAT4 green = XMFLOAT4(0.0f, 1.0f, 0.0f, 1.0f);
-	XMFLOAT4 blue = XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f);
-	XMFLOAT4 black = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
-	XMFLOAT4 white = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);*/
-
-	//Mesh 1
-	/*Vertex vertices[] =
-	{
-		{ XMFLOAT3(+0.0f, +0.3f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f)},
-		{ XMFLOAT3(+0.3f, -0.3f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) },
-		{ XMFLOAT3(-0.3f, -0.3f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) },
-	};*/
-
-	std::vector<Vertex> verts1;
-	verts1.push_back({ XMFLOAT3(+0.0f, +0.3f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) });
-	verts1.push_back({ XMFLOAT3(+0.3f, -0.3f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) });
-	verts1.push_back({ XMFLOAT3(-0.3f, -0.3f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) });
-
-	//unsigned int indices[] = { 0, 1, 2 };
-
-	std::vector<UINT> indicies;
-	indicies.push_back(0);
-	indicies.push_back(1);
-	indicies.push_back(2);
-
-	std::shared_ptr<Mesh> triangle = std::make_shared<Mesh>(verts1, verts1.size(), indicies,
-		indicies.size(), device, context);
-
-	//Mesh 2
-	/*Vertex vertices2[] =
-	{
-		{ XMFLOAT3(+0.7f, +0.8f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) },
-		{ XMFLOAT3(+0.9f, +0.5f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) },
-		{ XMFLOAT3(+0.8f, +0.3f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) },
-		{ XMFLOAT3(+0.6f, +0.3f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) },
-		{ XMFLOAT3(+0.7f, +0.0f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) },
-		{ XMFLOAT3(+0.9f, +0.2f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) },
-	};*/
-
-	std::vector<Vertex> verts2;
-	verts2.push_back({ XMFLOAT3(+0.7f, +0.8f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) });
-	verts2.push_back({ XMFLOAT3(+0.9f, +0.5f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) });
-	verts2.push_back({ XMFLOAT3(+0.8f, +0.3f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) });
-	verts2.push_back({ XMFLOAT3(+0.6f, +0.3f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) });
-	verts2.push_back({ XMFLOAT3(+0.7f, +0.0f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) });
-	verts2.push_back({ XMFLOAT3(+0.9f, +0.2f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) });
-
-	//unsigned int indices2[] = { 0, 1, 2, 0, 2, 3, 3, 2, 4, 2, 5, 4};
-
-	std::vector<UINT> indicies2;
-	indicies2.push_back(0);
-	indicies2.push_back(1);
-	indicies2.push_back(2);
-	indicies2.push_back(0);
-	indicies2.push_back(2);
-	indicies2.push_back(3);
-	indicies2.push_back(3);
-	indicies2.push_back(2);
-	indicies2.push_back(4);
-	indicies2.push_back(2);
-	indicies2.push_back(5);
-	indicies2.push_back(4);
-
-	std::shared_ptr<Mesh> triangle2 = std::make_shared<Mesh>(verts2, verts2.size(), indicies2,
-		indicies2.size(), device, context);
-
-	//Mesh 3
-	/*Vertex vertices3[] =
-	{
-		{ XMFLOAT3(-0.8f, +0.5f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) },
-		{ XMFLOAT3(-0.4f, +0.5f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) },
-		{ XMFLOAT3(-0.8f, +0.3f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) },
-		{ XMFLOAT3(-0.4f, +0.3f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) },
-	};*/
-
-	std::vector<Vertex> verts3;
-	verts3.push_back({ XMFLOAT3(-0.8f, +0.5f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) });
-	verts3.push_back({ XMFLOAT3(-0.4f, +0.5f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) });
-	verts3.push_back({ XMFLOAT3(-0.8f, +0.3f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) });
-	verts3.push_back({ XMFLOAT3(-0.4f, +0.3f, +0.0f), XMFLOAT3(0.0f, 0.0f, -1.0f), XMFLOAT2(0.0f, 0.0f) });
-
-	//unsigned int indices3[] = { 0, 1, 2, 1, 3, 2};
-
-	std::vector<UINT> indicies3;
-	indicies3.push_back(0);
-	indicies3.push_back(1);
-	indicies3.push_back(2);
-	indicies3.push_back(1);
-	indicies3.push_back(3);
-	indicies3.push_back(2);
-
-	std::shared_ptr<Mesh> triangle3 = std::make_shared<Mesh>(verts3, verts3.size(), indicies3,
-		indicies3.size(), device, context);
-
 	//Textures
 	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/Textures/cushion.png").c_str(), 0, cushionDiffuse.GetAddressOf());
 	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/Textures/cushion_normals.png").c_str(), 0, cushionNormal.GetAddressOf());
@@ -320,6 +212,20 @@ void Game::CreateGeometry()
 	samplerDesc.Filter = D3D11_FILTER_MIN_MAG_LINEAR_MIP_POINT;
 	samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
 	device->CreateSamplerState(&samplerDesc, sampler.GetAddressOf());
+
+	//Skybox
+	sky = Sky(std::make_shared<Mesh>(FixPath(L"../../Assets/Models/cube.obj").c_str(), device, context),
+		sampler,
+		device,
+		context,
+		skyVertexShader,
+		skyPixelShader,
+		FixPath(L"../../Assets/Skies/Planet/right.png").c_str(),
+		FixPath(L"../../Assets/Skies/Planet/left.png").c_str(),
+		FixPath(L"../../Assets/Skies/Planet/up.png").c_str(),
+		FixPath(L"../../Assets/Skies/Planet/down.png").c_str(),
+		FixPath(L"../../Assets/Skies/Planet/front.png").c_str(),
+		FixPath(L"../../Assets/Skies/Planet/back.png").c_str());
 	
 	//Create Materials
 	material = std::make_shared<Material>(
@@ -459,6 +365,9 @@ void Game::Draw(float deltaTime, float totalTime)
 		ps->SetShader();
 		entities[i]->GetMesh()->Draw();
 	}
+
+	//Drawing the sky
+	sky.Draw(cameras[activeCameraIndex]);
 
 	//ImGui
 	ImGui::Render();

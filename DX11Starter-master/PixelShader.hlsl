@@ -8,7 +8,6 @@ cbuffer ExternalData : register(b0)
     float3 ambient;
     float2 scale;
     float2 offset;
-    //Light lights[5];
     Light directionalLight;
     Light directionalLight2;
     Light directionalLight3;
@@ -20,8 +19,11 @@ cbuffer ExternalData : register(b0)
 SamplerState BasicSampler : register(s0);
 
 //Textures
-Texture2D DiffuseTexture : register(t0);
+Texture2D Albedo : register(t0);
 Texture2D NormalMap : register(t1);
+Texture2D RoughnessMap : register(t2);
+Texture2D MetalnessMap : register(t3);
+
 
 // --------------------------------------------------------
 // The entry point (main method) for our pixel shader
@@ -50,50 +52,32 @@ float4 main(VertexToPixel input) : SV_TARGET
     float3x3 TBN = float3x3(T, B, N);
     input.normal = mul(unpackedNormal, TBN);
     
-    float3 diffuse = pow(DiffuseTexture.Sample(BasicSampler, input.uv).rgb, 2.2f);
-    float3 V = normalize(cameraPos - input.worldPosition);
-    float specExponent = (1.0f - roughness) * MAX_SPECULAR_EXPONENT;
+    //PBR parameters
+    float3 albedo = pow(Albedo.Sample(BasicSampler, input.uv).rgb, 2.2f);
+    float roughness = RoughnessMap.Sample(BasicSampler, input.uv).r;
+    float metalness = MetalnessMap.Sample(BasicSampler, input.uv).r;
+    float3 specularColor = lerp(F0_NON_METAL, albedo.rgb, metalness);
+    float3 toCamera = normalize(cameraPos - input.worldPosition);
     float3 light = float3(0, 0, 0);
     
-    /*for (int i = 0; i < 5; i++)
-    {
-        [branch] switch (lights[i].type)
-        {
-            case LIGHT_TYPE_DIRECTIONAL:
-                light += DiffuseSpecCalc(lights[i], input.normal, colorTint, ambient, specExponent, V, lights[i].direction);
-                break;
-            
-            case LIGHT_TYPE_POINT:
-                float3 direction = normalize(input.worldPosition - lights[i].position);
-                light += DiffuseSpecCalc(lights[i], input.normal, colorTint, ambient, specExponent, V, direction)
-                         * Attenuate(lights[i], input.worldPosition);
-                break;
-            
-            case LIGHT_TYPE_SPOT:
-                light += 0;
-                break;
-        }
-    }*/
-    
     //Directional Light
-    light += DiffuseSpecCalc(directionalLight, input.normal, colorTint, specExponent, V, directionalLight.direction);
-    light += DiffuseSpecCalc(directionalLight2, input.normal, colorTint, specExponent, V, directionalLight2.direction);
-    light += DiffuseSpecCalc(directionalLight3, input.normal, colorTint, specExponent, V, directionalLight3.direction);
+    light += DiffuseSpecCalc(directionalLight, input.normal, directionalLight.direction, toCamera,
+                             albedo, roughness, metalness, specularColor);
+    light += DiffuseSpecCalc(directionalLight2, input.normal, directionalLight2.direction, toCamera,
+                             albedo, roughness, metalness, specularColor);
+    light += DiffuseSpecCalc(directionalLight3, input.normal, directionalLight3.direction, toCamera,
+                             albedo, roughness, metalness, specularColor);
     
     //Point Light
     float3 direction = normalize(input.worldPosition - pointLight.position);
-    light += DiffuseSpecCalc(pointLight, input.normal, colorTint, specExponent, V, direction)
+    light += DiffuseSpecCalc(pointLight, input.normal, direction, toCamera,
+             albedo, roughness, metalness, specularColor)
              * Attenuate(pointLight, input.worldPosition);
     
     direction = normalize(input.worldPosition - pointLight2.position);
-    light += DiffuseSpecCalc(pointLight2, input.normal, colorTint, specExponent, V, direction)
+    light += DiffuseSpecCalc(pointLight2, input.normal, direction, toCamera,
+             albedo, roughness, metalness, specularColor)
              * Attenuate(pointLight, input.worldPosition);
     
-    light *= colorTint.xyz;
-    light += ambient;
-    
-    //return float4(roughness.rrr, 1);
-    //return float4(input.uv, 0, 1);
-    //return float4(input.normal, 1.0);
-    return float4(pow(light * diffuse, 1.0f / 2.2f), 1);
+    return float4(pow(light * albedo, 1.0f / 2.2f), 1);
 }

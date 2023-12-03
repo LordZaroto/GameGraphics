@@ -136,32 +136,32 @@ void Game::Init()
 	directionalLight.Type = LIGHT_TYPE_DIRECTIONAL;
 	directionalLight.Direction = XMFLOAT3(1.0f, 0.0f, 0.0f);
 	directionalLight.Color = XMFLOAT3(1.0f, 0.0f, 0.0f);
-	directionalLight.Intensity = 1.0f;
+	directionalLight.Intensity = 5.0f;
 
 	directionalLight2 = {};
 	directionalLight2.Type = LIGHT_TYPE_DIRECTIONAL;
 	directionalLight2.Direction = XMFLOAT3(0.0f, -1.0f, 0.0f);
 	directionalLight2.Color = XMFLOAT3(0.0f, 1.0f, 0.0f);
-	directionalLight2.Intensity = 1.0f;
+	directionalLight2.Intensity = 5.0f;
 
 	directionalLight3 = {};
 	directionalLight3.Type = LIGHT_TYPE_DIRECTIONAL;
 	directionalLight3.Direction = XMFLOAT3(-1.0f, 0.0f, 0.0f);
 	directionalLight3.Color = XMFLOAT3(0.0f, 0.0f, 1.0f);
-	directionalLight3.Intensity = 1.0f;
+	directionalLight3.Intensity = 5.0f;
 	
 	pointLight = {};
 	pointLight.Type = LIGHT_TYPE_POINT;
 	pointLight.Position = XMFLOAT3(-3.0f, 2.0f, -2.0f);
 	pointLight.Color = XMFLOAT3(0.0f, 0.5f, 0.8f);
-	pointLight.Intensity = 1.0f;
+	pointLight.Intensity = 5.0f;
 	pointLight.Range = 10.0f;
 
 	pointLight2 = {};
 	pointLight2.Type = LIGHT_TYPE_POINT;
 	pointLight2.Position = XMFLOAT3(3.0f, -2.0f, -2.0f);
 	pointLight2.Color = XMFLOAT3(0.8f, 0.5f, 0.0f);
-	pointLight2.Intensity = 1.0f;
+	pointLight2.Intensity = 5.0f;
 	pointLight.Range = 10.0f;
 
 
@@ -199,10 +199,37 @@ void Game::LoadShaders()
 void Game::CreateGeometry()
 {
 	//Textures
-	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/Textures/cushion.png").c_str(), 0, cushionDiffuse.GetAddressOf());
-	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/Textures/cushion_normals.png").c_str(), 0, cushionNormal.GetAddressOf());
-	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/Textures/rock.png").c_str(), 0, rockDiffuse.GetAddressOf());
-	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/Textures/rock_normals.png").c_str(), 0, rockNormal.GetAddressOf());
+	//---------------------------------------
+	//bronze
+	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/PBR/bronze_albedo.png").c_str(), 0, bronzeAlbedo.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/PBR/bronze_normals.png").c_str(), 0, bronzeNormal.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/PBR/bronze_roughness.png").c_str(), 0, bronzeRoughness.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/PBR/bronze_metal.png").c_str(), 0, bronzeMetal.GetAddressOf());
+
+	//cobblestone
+	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/PBR/cobblestone_albedo.png").c_str(), 0, cobblestoneAlbedo.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/PBR/cobblestone_normals.png").c_str(), 0, cobblestoneNormal.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/PBR/cobblestone_roughness.png").c_str(), 0, cobblestoneRoughness.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/PBR/cobblestone_metal.png").c_str(), 0, cobblestoneMetal.GetAddressOf());
+
+	//floor
+	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/PBR/floor_albedo.png").c_str(), 0, floorAlbedo.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/PBR/floor_normals.png").c_str(), 0, floorNormal.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/PBR/floor_roughness.png").c_str(), 0, floorRoughness.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/PBR/floor_metal.png").c_str(), 0, floorMetal.GetAddressOf());
+
+	//paint
+	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/PBR/paint_albedo.png").c_str(), 0, paintAlbedo.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/PBR/paint_normals.png").c_str(), 0, paintNormal.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/PBR/paint_roughness.png").c_str(), 0, paintRoughness.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/PBR/paint_metal.png").c_str(), 0, paintMetal.GetAddressOf());
+
+	//scratched
+	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/PBR/scratched_albedo.png").c_str(), 0, scratchedAlbedo.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/PBR/scratched_normals.png").c_str(), 0, scratchedNormal.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/PBR/scratched_roughness.png").c_str(), 0, scratchedRoughness.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/PBR/scratched_metal.png").c_str(), 0, scratchedMetal.GetAddressOf());
+
 
 	//Samplers
 	D3D11_SAMPLER_DESC samplerDesc = {};
@@ -229,7 +256,7 @@ void Game::CreateGeometry()
 	
 	//Create Materials
 	material = std::make_shared<Material>(
-		XMFLOAT4(1.0f, 0.0f, 1.0f, 1.0f),
+		XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f),
 		0.99f,
 		XMFLOAT2(2.0f, 2.0f),
 		XMFLOAT2(0.0f, 0.0f),
@@ -242,25 +269,71 @@ void Game::CreateGeometry()
 		XMFLOAT2(0.0f, 0.0f),
 		pixelShader,
 		vertexShader);
+	material2 = std::make_shared<Material>(
+		XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f),
+		0.99f,
+		XMFLOAT2(2.0f, 2.0f),
+		XMFLOAT2(0.0f, 0.0f),
+		pixelShader,
+		vertexShader);
+	material3 = std::make_shared<Material>(
+		XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f),
+		0.99f,
+		XMFLOAT2(2.0f, 2.0f),
+		XMFLOAT2(0.0f, 0.0f),
+		pixelShader,
+		vertexShader);
+	material4 = std::make_shared<Material>(
+		XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f),
+		0.99f,
+		XMFLOAT2(2.0f, 2.0f),
+		XMFLOAT2(0.0f, 0.0f),
+		pixelShader,
+		vertexShader);
 
 	//Add Textures and Samplers to Materials
+	//Samplers
 	material->AddSampler("BasicSampler", sampler);
 	material1->AddSampler("BasicSampler", sampler);
-	material->AddTextureSRV("DiffuseTexture", cushionDiffuse);
-	material->AddTextureSRV("NormalMap", cushionNormal);
-	material1->AddTextureSRV("DiffuseTexture", rockDiffuse);
-	material1->AddTextureSRV("NormalMap", rockNormal);
+	material2->AddSampler("BasicSampler", sampler);
+	material3->AddSampler("BasicSampler", sampler);
+	material4->AddSampler("BasicSampler", sampler);
+	//bronze
+	material->AddTextureSRV("Albedo", bronzeAlbedo);
+	material->AddTextureSRV("NormalMap", bronzeNormal);
+	material->AddTextureSRV("RoughnessMap", bronzeRoughness);
+	material->AddTextureSRV("MetalnessMap", bronzeMetal);
+	//cobblestone
+	material1->AddTextureSRV("Albedo", cobblestoneAlbedo);
+	material1->AddTextureSRV("NormalMap", cobblestoneNormal);
+	material1->AddTextureSRV("RoughnessMap", cobblestoneRoughness);
+	material1->AddTextureSRV("MetalnessMap", cobblestoneMetal);
+	//floor
+	material2->AddTextureSRV("Albedo", floorAlbedo);
+	material2->AddTextureSRV("NormalMap", floorNormal);
+	material2->AddTextureSRV("RoughnessMap", floorRoughness);
+	material2->AddTextureSRV("MetalnessMap", floorMetal);
+	//paint
+	material3->AddTextureSRV("Albedo", paintAlbedo);
+	material3->AddTextureSRV("NormalMap", paintNormal);
+	material3->AddTextureSRV("RoughnessMap", paintRoughness);
+	material3->AddTextureSRV("MetalnessMap", paintMetal);
+	//scratched
+	material4->AddTextureSRV("Albedo", scratchedAlbedo);
+	material4->AddTextureSRV("NormalMap", scratchedNormal);
+	material4->AddTextureSRV("RoughnessMap", scratchedRoughness);
+	material4->AddTextureSRV("MetalnessMap", scratchedMetal);
 
 	std::shared_ptr<Entity> entity = std::make_shared<Entity>(
-		std::make_shared<Mesh>(FixPath(L"../../Assets/Models/sphere.obj").c_str(), device, context), material1);
+		std::make_shared<Mesh>(FixPath(L"../../Assets/Models/sphere.obj").c_str(), device, context), material);
 	std::shared_ptr<Entity> entity1 = std::make_shared<Entity>(
-		std::make_shared<Mesh>(FixPath(L"../../Assets/Models/torus.obj").c_str(), device, context), material);
+		std::make_shared<Mesh>(FixPath(L"../../Assets/Models/torus.obj").c_str(), device, context), material1);
 	std::shared_ptr<Entity> entity2 = std::make_shared<Entity>(
-		std::make_shared<Mesh>(FixPath(L"../../Assets/Models/cylinder.obj").c_str(), device, context), material);
+		std::make_shared<Mesh>(FixPath(L"../../Assets/Models/cylinder.obj").c_str(), device, context), material2);
 	std::shared_ptr<Entity> entity3 = std::make_shared<Entity>(
-		std::make_shared<Mesh>(FixPath(L"../../Assets/Models/helix.obj").c_str(), device, context), material1);
+		std::make_shared<Mesh>(FixPath(L"../../Assets/Models/helix.obj").c_str(), device, context), material3);
 	std::shared_ptr<Entity> entity4 = std::make_shared<Entity>(
-		std::make_shared<Mesh>(FixPath(L"../../Assets/Models/cube.obj").c_str(), device, context), material1);
+		std::make_shared<Mesh>(FixPath(L"../../Assets/Models/cube.obj").c_str(), device, context), material4);
 
 	//Move entities
 	entity->GetTransform()->SetPosition(XMFLOAT3(-5.0, 0.0, 0.0));

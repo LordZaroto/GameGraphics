@@ -67,6 +67,8 @@ private:
 	std::shared_ptr<Material> material;
 	std::shared_ptr<Material> material1;
 	std::shared_ptr<Material> material2;
+	std::shared_ptr<Material> material3;
+	std::shared_ptr<Material> material4;
 
 	//Lights
 	DirectX::XMFLOAT3 ambientColor;
@@ -77,10 +79,38 @@ private:
 	Light pointLight2;
 
 	//Textures
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cushionDiffuse;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cushionNormal;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> rockDiffuse;
-	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> rockNormal;
+	//-------------------------------------
+	//bronze
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> bronzeAlbedo;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> bronzeNormal;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> bronzeRoughness;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> bronzeMetal;
+
+	//cobblestone
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cobblestoneAlbedo;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cobblestoneNormal;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cobblestoneRoughness;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> cobblestoneMetal;
+
+	//floor
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> floorAlbedo;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> floorNormal;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> floorRoughness;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> floorMetal;
+
+	//paint
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> paintAlbedo;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> paintNormal;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> paintRoughness;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> paintMetal;
+
+	//scratched
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> scratchedAlbedo;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> scratchedNormal;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> scratchedRoughness;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> scratchedMetal;
+
+	//Sampler
 	Microsoft::WRL::ComPtr<ID3D11SamplerState> sampler;
 
 	//SkyBox

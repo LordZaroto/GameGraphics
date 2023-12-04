@@ -110,6 +110,35 @@ void Game::Init()
 		//    these calls will need to happen multiple times per frame
 	}
 
+	//Shadow Map
+	D3D11_TEXTURE2D_DESC shadowDesc = {};
+	shadowDesc.Width = 1024;
+	shadowDesc.Height = 1024;
+	shadowDesc.ArraySize = 1;
+	shadowDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+	shadowDesc.CPUAccessFlags = 0;
+	shadowDesc.Format = DXGI_FORMAT_R32_TYPELESS;
+	shadowDesc.MipLevels = 1;
+	shadowDesc.MiscFlags = 0;
+	shadowDesc.SampleDesc.Count = 1;
+	shadowDesc.SampleDesc.Quality = 0;
+	shadowDesc.Usage = D3D11_USAGE_DEFAULT;
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> shadowTexture;
+	device->CreateTexture2D(&shadowDesc, 0, shadowTexture.GetAddressOf());
+
+	D3D11_DEPTH_STENCIL_VIEW_DESC shadowDSDesc = {};
+	shadowDSDesc.Format = DXGI_FORMAT_D32_FLOAT;
+	shadowDSDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+	shadowDSDesc.Texture2D.MipSlice = 0;
+	device->CreateDepthStencilView(shadowTexture.Get(), &shadowDSDesc, shadowDSV.GetAddressOf());
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+	srvDesc.Format = DXGI_FORMAT_R32_FLOAT;
+	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Texture2D.MipLevels = 1;
+	srvDesc.Texture2D.MostDetailedMip = 0;
+	device->CreateShaderResourceView(shadowTexture.Get(), &srvDesc, shadowSRV.GetAddressOf());
+
 	//Get the constant buffer size
 	unsigned int size = sizeof(VertexShaderExternalData);
 	size = (size + 15) / 16 * 16;
@@ -340,7 +369,10 @@ void Game::CreateGeometry()
 	entity1->GetTransform()->SetPosition(XMFLOAT3(-2.5, 0.0, 0.0));
 	entity2->GetTransform()->SetPosition(XMFLOAT3(0.0, 0.0, 0.0));
 	entity3->GetTransform()->SetPosition(XMFLOAT3(2.5, 0.0, 0.0));
-	entity4->GetTransform()->SetPosition(XMFLOAT3(5.0, 0.0, 0.0));
+	entity4->GetTransform()->SetPosition(XMFLOAT3(0.0, -12.0, 0.0));
+
+	//Scale entities
+	entity4->GetTransform()->SetScale(XMFLOAT3(10.0, 10.0, 10.0));
 	
 	//Add all entities to the entity vector
 	entities.push_back(entity);
@@ -377,7 +409,7 @@ void Game::Update(float deltaTime, float totalTime)
 	//Move entities
 	//entities[0]->GetTransform()->Scale((deltaTime/10)+1, (deltaTime / 10) + 1, 1);
 	//entities[1]->GetTransform()->MoveAbsolute(deltaTime/100, deltaTime/100, 0);
-	//entities[2]->GetTransform()->Rotate(0, 0, deltaTime);
+	//entities[2]->GetTransform()->Rotate(0, 0, deltaTime/100);
 
 	//Camera
 	cameras[activeCameraIndex]->Update(deltaTime);

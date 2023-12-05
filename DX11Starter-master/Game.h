@@ -55,6 +55,7 @@ private:
 	std::shared_ptr<SimpleVertexShader> vertexShader;
 	std::shared_ptr<SimplePixelShader> skyPixelShader;
 	std::shared_ptr<SimpleVertexShader> skyVertexShader;
+	std::shared_ptr<SimpleVertexShader> shadowVS;
 
 	//Camera
 	std::vector<std::shared_ptr<Camera>> cameras;
@@ -119,8 +120,8 @@ private:
 	//Shadows
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> shadowDSV;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> shadowSRV;
-	DirectX::XMFLOAT4X4 shadowViewMatrix;
-	DirectX::XMFLOAT4X4 shadowProjectionMatrix;
-
+	DirectX::XMFLOAT4X4 lightViewMatrix;
+	DirectX::XMFLOAT4X4 lightProjectMatrix;
+	float shadowMapRes;
 };
 

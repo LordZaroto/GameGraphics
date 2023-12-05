@@ -41,6 +41,7 @@ struct VertexToPixel
 	//  |    |                |
 	//  v    v                v
     float4 screenPosition : SV_POSITION;
+    float4 shadowMapPos : SHADOW_POSITION;
     float2 uv : TEXCOORD; //UVs
     float3 normal : NORMAL;
     float3 tangent : TANGENT;
@@ -195,7 +196,7 @@ float3 DiffuseSpecCalc(Light light, float3 normal, float3 direction, float3 toCa
 {
     float3 diffuse = saturate(dot(normal, -direction));
     float3 F;
-    float3 spec = MicrofacetBRDF(normal, direction, toCamera, roughness, specColor, F);
+    float3 spec = MicrofacetBRDF(normal, -direction, toCamera, roughness, specColor, F);
     
     return float3((DiffuseEnergyConserve(diffuse, F, metalness) * albedo + spec) * light.intensity * light.color);
 };

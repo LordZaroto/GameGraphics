@@ -57,6 +57,8 @@ Game::Game(HINSTANCE hInstance)
 	activeCameraIndex = 0;
 
 	cameras = { camera, camera1, camera2 };
+
+	shadowMapRes = 1024.0f;
 }
 
 // --------------------------------------------------------
@@ -110,35 +112,6 @@ void Game::Init()
 		//    these calls will need to happen multiple times per frame
 	}
 
-	//Shadow Map
-	D3D11_TEXTURE2D_DESC shadowDesc = {};
-	shadowDesc.Width = 1024;
-	shadowDesc.Height = 1024;
-	shadowDesc.ArraySize = 1;
-	shadowDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
-	shadowDesc.CPUAccessFlags = 0;
-	shadowDesc.Format = DXGI_FORMAT_R32_TYPELESS;
-	shadowDesc.MipLevels = 1;
-	shadowDesc.MiscFlags = 0;
-	shadowDesc.SampleDesc.Count = 1;
-	shadowDesc.SampleDesc.Quality = 0;
-	shadowDesc.Usage = D3D11_USAGE_DEFAULT;
-	Microsoft::WRL::ComPtr<ID3D11Texture2D> shadowTexture;
-	device->CreateTexture2D(&shadowDesc, 0, shadowTexture.GetAddressOf());
-
-	D3D11_DEPTH_STENCIL_VIEW_DESC shadowDSDesc = {};
-	shadowDSDesc.Format = DXGI_FORMAT_D32_FLOAT;
-	shadowDSDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
-	shadowDSDesc.Texture2D.MipSlice = 0;
-	device->CreateDepthStencilView(shadowTexture.Get(), &shadowDSDesc, shadowDSV.GetAddressOf());
-
-	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-	srvDesc.Format = DXGI_FORMAT_R32_FLOAT;
-	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-	srvDesc.Texture2D.MipLevels = 1;
-	srvDesc.Texture2D.MostDetailedMip = 0;
-	device->CreateShaderResourceView(shadowTexture.Get(), &srvDesc, shadowSRV.GetAddressOf());
-
 	//Get the constant buffer size
 	unsigned int size = sizeof(VertexShaderExternalData);
 	size = (size + 15) / 16 * 16;
@@ -163,7 +136,7 @@ void Game::Init()
 
 	directionalLight = {};
 	directionalLight.Type = LIGHT_TYPE_DIRECTIONAL;
-	directionalLight.Direction = XMFLOAT3(1.0f, 0.0f, 0.0f);
+	directionalLight.Direction = XMFLOAT3(0.0f, 1.0f, 0.0f);
 	directionalLight.Color = XMFLOAT3(1.0f, 0.0f, 0.0f);
 	directionalLight.Intensity = 5.0f;
 
@@ -193,6 +166,44 @@ void Game::Init()
 	pointLight2.Intensity = 5.0f;
 	pointLight.Range = 10.0f;
 
+	//Shadow Map
+	D3D11_TEXTURE2D_DESC shadowDesc = {};
+	shadowDesc.Width = shadowMapRes;
+	shadowDesc.Height = shadowMapRes;
+	shadowDesc.ArraySize = 1;
+	shadowDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
+	shadowDesc.CPUAccessFlags = 0;
+	shadowDesc.Format = DXGI_FORMAT_R32_TYPELESS;
+	shadowDesc.MipLevels = 1;
+	shadowDesc.MiscFlags = 0;
+	shadowDesc.SampleDesc.Count = 1;
+	shadowDesc.SampleDesc.Quality = 0;
+	shadowDesc.Usage = D3D11_USAGE_DEFAULT;
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> shadowTexture;
+	device->CreateTexture2D(&shadowDesc, 0, shadowTexture.GetAddressOf());
+
+	D3D11_DEPTH_STENCIL_VIEW_DESC shadowDSDesc = {};
+	shadowDSDesc.Format = DXGI_FORMAT_D32_FLOAT;
+	shadowDSDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+	shadowDSDesc.Texture2D.MipSlice = 0;
+	device->CreateDepthStencilView(shadowTexture.Get(), &shadowDSDesc, shadowDSV.GetAddressOf());
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+	srvDesc.Format = DXGI_FORMAT_R32_FLOAT;
+	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Texture2D.MipLevels = 1;
+	srvDesc.Texture2D.MostDetailedMip = 0;
+	device->CreateShaderResourceView(shadowTexture.Get(), &srvDesc, shadowSRV.GetAddressOf());
+
+	//Creating light matricies
+	XMVECTOR direction = XMVectorSet(directionalLight.Direction.x, directionalLight.Direction.y, directionalLight.Direction.z, 0.0f);
+	XMMATRIX lightView = XMMatrixLookToLH(-direction * 20, direction, XMVectorSet(0, 1, 0, 0));
+	XMStoreFloat4x4(&lightViewMatrix, lightView);
+
+	float lightProjectionSize = 15.0f;
+	XMMATRIX lightProjection = XMMatrixOrthographicLH(lightProjectionSize, lightProjectionSize, 1.0f, 100.0f);
+	XMStoreFloat4x4(&lightProjectMatrix, lightProjection);
+
 
 	// Initialize ImGui itself & platform/renderer backends
 	IMGUI_CHECKVERSION();
@@ -218,6 +229,7 @@ void Game::LoadShaders()
 	psCustom = std::make_shared<SimplePixelShader>(device, context, FixPath(L"CustomPS.cso").c_str());
 	skyPixelShader = std::make_shared<SimplePixelShader>(device, context, FixPath(L"SkyPixelShader.cso").c_str());
 	skyVertexShader = std::make_shared<SimpleVertexShader>(device, context, FixPath(L"SkyVertexShader.cso").c_str());
+	shadowVS = std::make_shared<SimpleVertexShader>(device, context, FixPath(L"ShadowVertexShader.cso").c_str());
 }
 
 
@@ -230,34 +242,34 @@ void Game::CreateGeometry()
 	//Textures
 	//---------------------------------------
 	//bronze
-	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/PBR/bronze_albedo.png").c_str(), 0, bronzeAlbedo.GetAddressOf());
-	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/PBR/bronze_normals.png").c_str(), 0, bronzeNormal.GetAddressOf());
-	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/PBR/bronze_roughness.png").c_str(), 0, bronzeRoughness.GetAddressOf());
-	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/PBR/bronze_metal.png").c_str(), 0, bronzeMetal.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/PBR/bronze_albedo.png").c_str(), 0, bronzeAlbedo.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/PBR/bronze_normals.png").c_str(), 0, bronzeNormal.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/PBR/bronze_roughness.png").c_str(), 0, bronzeRoughness.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/PBR/bronze_metal.png").c_str(), 0, bronzeMetal.GetAddressOf());
 
 	//cobblestone
-	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/PBR/cobblestone_albedo.png").c_str(), 0, cobblestoneAlbedo.GetAddressOf());
-	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/PBR/cobblestone_normals.png").c_str(), 0, cobblestoneNormal.GetAddressOf());
-	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/PBR/cobblestone_roughness.png").c_str(), 0, cobblestoneRoughness.GetAddressOf());
-	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/PBR/cobblestone_metal.png").c_str(), 0, cobblestoneMetal.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/PBR/cobblestone_albedo.png").c_str(), 0, cobblestoneAlbedo.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/PBR/cobblestone_normals.png").c_str(), 0, cobblestoneNormal.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/PBR/cobblestone_roughness.png").c_str(), 0, cobblestoneRoughness.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/PBR/cobblestone_metal.png").c_str(), 0, cobblestoneMetal.GetAddressOf());
 
 	//floor
-	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/PBR/floor_albedo.png").c_str(), 0, floorAlbedo.GetAddressOf());
-	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/PBR/floor_normals.png").c_str(), 0, floorNormal.GetAddressOf());
-	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/PBR/floor_roughness.png").c_str(), 0, floorRoughness.GetAddressOf());
-	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/PBR/floor_metal.png").c_str(), 0, floorMetal.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/PBR/floor_albedo.png").c_str(), 0, floorAlbedo.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/PBR/floor_normals.png").c_str(), 0, floorNormal.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/PBR/floor_roughness.png").c_str(), 0, floorRoughness.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/PBR/floor_metal.png").c_str(), 0, floorMetal.GetAddressOf());
 
 	//paint
-	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/PBR/paint_albedo.png").c_str(), 0, paintAlbedo.GetAddressOf());
-	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/PBR/paint_normals.png").c_str(), 0, paintNormal.GetAddressOf());
-	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/PBR/paint_roughness.png").c_str(), 0, paintRoughness.GetAddressOf());
-	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/PBR/paint_metal.png").c_str(), 0, paintMetal.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/PBR/paint_albedo.png").c_str(), 0, paintAlbedo.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/PBR/paint_normals.png").c_str(), 0, paintNormal.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/PBR/paint_roughness.png").c_str(), 0, paintRoughness.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/PBR/paint_metal.png").c_str(), 0, paintMetal.GetAddressOf());
 
 	//scratched
-	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/PBR/scratched_albedo.png").c_str(), 0, scratchedAlbedo.GetAddressOf());
-	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/PBR/scratched_normals.png").c_str(), 0, scratchedNormal.GetAddressOf());
-	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/PBR/scratched_roughness.png").c_str(), 0, scratchedRoughness.GetAddressOf());
-	CreateWICTextureFromFile(device.Get(), FixPath(L"../../Assets/PBR/scratched_metal.png").c_str(), 0, scratchedMetal.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/PBR/scratched_albedo.png").c_str(), 0, scratchedAlbedo.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/PBR/scratched_normals.png").c_str(), 0, scratchedNormal.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/PBR/scratched_roughness.png").c_str(), 0, scratchedRoughness.GetAddressOf());
+	CreateWICTextureFromFile(device.Get(), context.Get(), FixPath(L"../../Assets/PBR/scratched_metal.png").c_str(), 0, scratchedMetal.GetAddressOf());
 
 
 	//Samplers
@@ -434,6 +446,42 @@ void Game::Draw(float deltaTime, float totalTime)
 
 		// Clear the depth buffer (resets per-pixel occlusion information)
 		context->ClearDepthStencilView(depthBufferDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+
+		//Clear Shadow Map
+		context->ClearDepthStencilView(shadowDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
+
+		//Setup output merger state
+		ID3D11RenderTargetView* nullRTV{};
+		context->OMSetRenderTargets(1, &nullRTV, shadowDSV.Get());
+
+		//Deactivate Pixel Shader
+		context->PSSetShader(0, 0, 0);
+
+		//Change viewport
+		D3D11_VIEWPORT viewport = {};
+		viewport.Width = shadowMapRes;
+		viewport.Height = shadowMapRes;
+		viewport.MaxDepth = 1.0f;
+		context->RSSetViewports(1, &viewport);
+
+		shadowVS->SetShader();
+		shadowVS->SetMatrix4x4("view", lightViewMatrix);
+		shadowVS->SetMatrix4x4("projection", lightProjectMatrix);
+
+		//Drawing each entity
+		for (int i = 0; i < entities.size(); i++)
+		{
+			shadowVS->SetMatrix4x4("world", entities[i]->GetTransform()->GetWorldMatrix());
+			shadowVS->CopyAllBufferData();
+
+			entities[i]->GetMesh()->Draw();
+		}
+
+		//Reset Pipeline
+		viewport.Width = (float)this->windowWidth;
+		viewport.Height = (float)this->windowHeight;
+		context->RSSetViewports(1, &viewport);
+		context->OMSetRenderTargets(1, backBufferRTV.GetAddressOf(), depthBufferDSV.Get());
 	}
 
 	//Drawing each entity
@@ -446,6 +494,8 @@ void Game::Draw(float deltaTime, float totalTime)
 		vs->SetMatrix4x4("worldInverseTranspose", entities[i]->GetTransform()->GetWorldInverseTransposeMatrix());
 		vs->SetMatrix4x4("view", cameras[activeCameraIndex]->GetViewMatrix());
 		vs->SetMatrix4x4("projection", cameras[activeCameraIndex]->GetProjectionMatrix());
+		vs->SetMatrix4x4("lightView", lightViewMatrix);
+		vs->SetMatrix4x4("lightProjection", lightProjectMatrix);
 
 		vs->CopyAllBufferData();
 

@@ -17,6 +17,7 @@ cbuffer ExternalData : register(b0)
 
 //Need at least 1 sampler for textures
 SamplerState BasicSampler : register(s0);
+SamplerComparisonState ShadowSampler : register(s1);
 
 //Textures
 Texture2D Albedo : register(t0);
@@ -44,10 +45,7 @@ float4 main(VertexToPixel input) : SV_TARGET
     shadowUV.y = 1 - shadowUV.y;
     
     float distToLight = input.shadowMapPos.z;
-    float distShadowMap = ShadowMap.Sample(BasicSampler, shadowUV).r;
-    
-    if(distShadowMap < distToLight)
-        return float4(0, 0, 0, 1);
+    float shadowAmount = ShadowMap.SampleCmpLevelZero(ShadowSampler, shadowUV, distToLight).r;
     
     //Scale
     float2 scaleCenter = float2(0.5f, 0.5f);
@@ -76,6 +74,7 @@ float4 main(VertexToPixel input) : SV_TARGET
     //Directional Light
     light += DiffuseSpecCalc(directionalLight, input.normal, directionalLight.direction, toCamera,
                              albedo, roughness, metalness, specularColor);
+    light += light * shadowAmount; //Add shadows to the first directional light
     light += DiffuseSpecCalc(directionalLight2, input.normal, directionalLight2.direction, toCamera,
                              albedo, roughness, metalness, specularColor);
     light += DiffuseSpecCalc(directionalLight3, input.normal, directionalLight3.direction, toCamera,

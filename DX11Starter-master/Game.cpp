@@ -204,6 +204,22 @@ void Game::Init()
 	XMMATRIX lightProjection = XMMatrixOrthographicLH(lightProjectionSize, lightProjectionSize, 1.0f, 100.0f);
 	XMStoreFloat4x4(&lightProjectMatrix, lightProjection);
 
+	D3D11_RASTERIZER_DESC shadowRastDesc = {};
+	shadowRastDesc.FillMode = D3D11_FILL_SOLID;
+	shadowRastDesc.CullMode = D3D11_CULL_BACK;
+	shadowRastDesc.DepthClipEnable = true;
+	shadowRastDesc.DepthBias = 1000;
+	shadowRastDesc.SlopeScaledDepthBias = 1.0f;
+	device->CreateRasterizerState(&shadowRastDesc, shadowRasterizer.GetAddressOf());
+
+	D3D11_SAMPLER_DESC shadowSampDesc = {};
+	shadowSampDesc.Filter = D3D11_FILTER_COMPARISON_MIN_MAG_MIP_LINEAR;
+	shadowSampDesc.ComparisonFunc = D3D11_COMPARISON_LESS;
+	shadowSampDesc.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
+	shadowSampDesc.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
+	shadowSampDesc.AddressW = D3D11_TEXTURE_ADDRESS_BORDER;
+	shadowSampDesc.BorderColor[0] = 1.0f;
+	device->CreateSamplerState(&shadowSampDesc, shadowSampler.GetAddressOf());
 
 	// Initialize ImGui itself & platform/renderer backends
 	IMGUI_CHECKVERSION();
@@ -459,14 +475,16 @@ void Game::Draw(float deltaTime, float totalTime)
 
 		//Change viewport
 		D3D11_VIEWPORT viewport = {};
-		viewport.Width = shadowMapRes;
-		viewport.Height = shadowMapRes;
+		viewport.Width = (float)shadowMapRes;
+		viewport.Height = (float)shadowMapRes;
 		viewport.MaxDepth = 1.0f;
 		context->RSSetViewports(1, &viewport);
+		context->RSSetState(shadowRasterizer.Get());
 
 		shadowVS->SetShader();
 		shadowVS->SetMatrix4x4("view", lightViewMatrix);
 		shadowVS->SetMatrix4x4("projection", lightProjectMatrix);
+		shadowVS->SetSamplerState("ShadowSampler", shadowSampler);
 
 		//Drawing each entity
 		for (int i = 0; i < entities.size(); i++)
@@ -482,6 +500,10 @@ void Game::Draw(float deltaTime, float totalTime)
 		viewport.Height = (float)this->windowHeight;
 		context->RSSetViewports(1, &viewport);
 		context->OMSetRenderTargets(1, backBufferRTV.GetAddressOf(), depthBufferDSV.Get());
+		context->RSSetState(0);
+
+		ID3D11ShaderResourceView* nullSRVs[128] = {};
+		context->PSSetShaderResources(0, 128, nullSRVs);
 	}
 
 	//Drawing each entity
@@ -569,6 +591,9 @@ void Game::ImGuiUpdate(float deltaTime, float totalTime)
 
 	//Making a ImGui window
 	ImGui::Begin("My First Window");
+
+	//Show shadow map
+	ImGui::Image(shadowSRV.Get(), ImVec2(512, 512));
 
 	if (ImGui::CollapsingHeader("Stats"))
 	{

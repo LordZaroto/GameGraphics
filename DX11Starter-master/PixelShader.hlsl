@@ -72,9 +72,9 @@ float4 main(VertexToPixel input) : SV_TARGET
     float3 light = float3(0, 0, 0);
     
     //Directional Light
-    light += DiffuseSpecCalc(directionalLight, input.normal, directionalLight.direction, toCamera,
+    float3 firstLight = DiffuseSpecCalc(directionalLight, input.normal, directionalLight.direction, toCamera,
                              albedo, roughness, metalness, specularColor);
-    light += light * shadowAmount; //Add shadows to the first directional light
+    light += firstLight * shadowAmount; //Add shadows to the first directional light
     light += DiffuseSpecCalc(directionalLight2, input.normal, directionalLight2.direction, toCamera,
                              albedo, roughness, metalness, specularColor);
     light += DiffuseSpecCalc(directionalLight3, input.normal, directionalLight3.direction, toCamera,

@@ -59,6 +59,8 @@ Game::Game(HINSTANCE hInstance)
 	cameras = { camera, camera1, camera2 };
 
 	shadowMapRes = 1024.0f;
+
+	blurRadius = 5;
 }
 
 // --------------------------------------------------------
@@ -136,7 +138,7 @@ void Game::Init()
 
 	directionalLight = {};
 	directionalLight.Type = LIGHT_TYPE_DIRECTIONAL;
-	directionalLight.Direction = XMFLOAT3(0.0f, 1.0f, 0.0f);
+	directionalLight.Direction = XMFLOAT3(0.5f, -0.5f, 0.5f);
 	directionalLight.Color = XMFLOAT3(1.0f, 0.0f, 0.0f);
 	directionalLight.Intensity = 5.0f;
 
@@ -221,6 +223,40 @@ void Game::Init()
 	shadowSampDesc.BorderColor[0] = 1.0f;
 	device->CreateSamplerState(&shadowSampDesc, shadowSampler.GetAddressOf());
 
+	//Post Process Sampler
+	D3D11_SAMPLER_DESC ppSampDesc = {};
+	ppSampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+	ppSampDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+	ppSampDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+	ppSampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	ppSampDesc.MaxLOD = D3D11_FLOAT32_MAX;
+	device->CreateSamplerState(&ppSampDesc, ppSampler.GetAddressOf());
+
+	D3D11_TEXTURE2D_DESC textureDesc = {};
+	textureDesc.Width = windowWidth;
+	textureDesc.Height = windowHeight;
+	textureDesc.ArraySize = 1;
+	textureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+	textureDesc.CPUAccessFlags = 0;
+	textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	textureDesc.MipLevels = 1;
+	textureDesc.MiscFlags = 0;
+	textureDesc.SampleDesc.Count = 1;
+	textureDesc.SampleDesc.Quality = 0;
+	textureDesc.Usage = D3D11_USAGE_DEFAULT;
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> ppTexture;
+	device->CreateTexture2D(&textureDesc, 0, ppTexture.GetAddressOf());
+
+	//Create Render Target View
+	D3D11_RENDER_TARGET_VIEW_DESC rtvDesc = {};
+	rtvDesc.Format = textureDesc.Format;
+	rtvDesc.Texture2D.MipSlice = 0;
+	rtvDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+	device->CreateRenderTargetView(ppTexture.Get(), &rtvDesc, ppRTV.ReleaseAndGetAddressOf());
+	
+	//Create SRV
+	device->CreateShaderResourceView(ppTexture.Get(), 0, ppSRV.ReleaseAndGetAddressOf());
+
 	// Initialize ImGui itself & platform/renderer backends
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
@@ -246,6 +282,8 @@ void Game::LoadShaders()
 	skyPixelShader = std::make_shared<SimplePixelShader>(device, context, FixPath(L"SkyPixelShader.cso").c_str());
 	skyVertexShader = std::make_shared<SimpleVertexShader>(device, context, FixPath(L"SkyVertexShader.cso").c_str());
 	shadowVS = std::make_shared<SimpleVertexShader>(device, context, FixPath(L"ShadowVertexShader.cso").c_str());
+	ppVS = std::make_shared<SimpleVertexShader>(device, context, FixPath(L"FullscreenVertexShader.cso").c_str());
+	ppPS = std::make_shared < SimplePixelShader > (device, context, FixPath(L"PostProcessPixelShader.cso").c_str());
 }
 
 
@@ -393,10 +431,10 @@ void Game::CreateGeometry()
 		std::make_shared<Mesh>(FixPath(L"../../Assets/Models/cube.obj").c_str(), device, context), material4);
 
 	//Move entities
-	entity->GetTransform()->SetPosition(XMFLOAT3(-5.0, 0.0, 0.0));
-	entity1->GetTransform()->SetPosition(XMFLOAT3(-2.5, 0.0, 0.0));
-	entity2->GetTransform()->SetPosition(XMFLOAT3(0.0, 0.0, 0.0));
-	entity3->GetTransform()->SetPosition(XMFLOAT3(2.5, 0.0, 0.0));
+	entity->GetTransform()->SetPosition(XMFLOAT3(-4.5, 0.0, 0.0));
+	entity1->GetTransform()->SetPosition(XMFLOAT3(-1.5, 0.0, 0.0));
+	entity2->GetTransform()->SetPosition(XMFLOAT3(1.5, 0.0, 0.0));
+	entity3->GetTransform()->SetPosition(XMFLOAT3(4.5, 0.0, 0.0));
 	entity4->GetTransform()->SetPosition(XMFLOAT3(0.0, -12.0, 0.0));
 
 	//Scale entities
@@ -434,10 +472,13 @@ void Game::Update(float deltaTime, float totalTime)
 {
 	ImGuiUpdate(deltaTime, totalTime);
 
+	rotate += 0.01; //deltaTime just isnt working for some reason
+
 	//Move entities
-	//entities[0]->GetTransform()->Scale((deltaTime/10)+1, (deltaTime / 10) + 1, 1);
-	//entities[1]->GetTransform()->MoveAbsolute(deltaTime/100, deltaTime/100, 0);
-	//entities[2]->GetTransform()->Rotate(0, 0, deltaTime/100);
+	entities[0]->GetTransform()->Rotate(XMFLOAT3(0, 0, rotate));
+	entities[1]->GetTransform()->Rotate(XMFLOAT3(0, 0, rotate));
+	entities[2]->GetTransform()->Rotate(XMFLOAT3(0, 0, rotate));
+	entities[3]->GetTransform()->Rotate(XMFLOAT3(0, 0, rotate));
 
 	//Camera
 	cameras[activeCameraIndex]->Update(deltaTime);
@@ -485,6 +526,7 @@ void Game::Draw(float deltaTime, float totalTime)
 		shadowVS->SetMatrix4x4("view", lightViewMatrix);
 		shadowVS->SetMatrix4x4("projection", lightProjectMatrix);
 		shadowVS->SetSamplerState("ShadowSampler", shadowSampler);
+		
 
 		//Drawing each entity
 		for (int i = 0; i < entities.size(); i++)
@@ -502,9 +544,14 @@ void Game::Draw(float deltaTime, float totalTime)
 		context->OMSetRenderTargets(1, backBufferRTV.GetAddressOf(), depthBufferDSV.Get());
 		context->RSSetState(0);
 
-		ID3D11ShaderResourceView* nullSRVs[128] = {};
-		context->PSSetShaderResources(0, 128, nullSRVs);
+		//Clear the render target
+		context->ClearRenderTargetView(ppRTV.Get(), bgColor);
+
+		//Swap active render target
+		context->OMSetRenderTargets(1, ppRTV.GetAddressOf(), depthBufferDSV.Get());
 	}
+
+
 
 	//Drawing each entity
 	for (int i = 0; i < entities.size(); i++)
@@ -540,11 +587,27 @@ void Game::Draw(float deltaTime, float totalTime)
 		
 		vs->SetShader();
 		ps->SetShader();
+		ps->SetShaderResourceView("ShadowMap", shadowSRV);
+		ps->SetSamplerState("ShadowSampler", shadowSampler);
 		entities[i]->GetMesh()->Draw();
 	}
 
 	//Drawing the sky
 	sky.Draw(cameras[activeCameraIndex]);
+
+	//Post-Render
+	context->OMSetRenderTargets(1, backBufferRTV.GetAddressOf(), 0);
+
+	ppPS->SetInt("blurRadius", blurRadius);
+	ppPS->SetFloat("pixelWidth", 1.0f / windowWidth);
+	ppPS->SetFloat("pixelHeight", 1.0f / windowHeight);
+	ppPS->CopyAllBufferData();
+
+	ppVS->SetShader();
+	ppPS->SetShader();
+	ppPS->SetShaderResourceView("Pixels", ppSRV.Get());
+	ppPS->SetSamplerState("ClampSampler", ppSampler.Get());
+	context->Draw(3, 0);
 
 	//ImGui
 	ImGui::Render();
@@ -564,6 +627,10 @@ void Game::Draw(float deltaTime, float totalTime)
 
 		// Must re-bind buffers after presenting, as they become unbound
 		context->OMSetRenderTargets(1, backBufferRTV.GetAddressOf(), depthBufferDSV.Get());
+		
+		//Unbind the shadow map
+		ID3D11ShaderResourceView* nullSRVs[128] = {};
+		context->PSSetShaderResources(0, 128, nullSRVs);
 	}
 }
 
@@ -593,7 +660,7 @@ void Game::ImGuiUpdate(float deltaTime, float totalTime)
 	ImGui::Begin("My First Window");
 
 	//Show shadow map
-	ImGui::Image(shadowSRV.Get(), ImVec2(512, 512));
+	//ImGui::Image(shadowSRV.Get(), ImVec2(512, 512));
 
 	if (ImGui::CollapsingHeader("Stats"))
 	{
@@ -775,6 +842,13 @@ void Game::ImGuiUpdate(float deltaTime, float totalTime)
 		}
 	}
 
+	static int blur = blurRadius;
+
+	if (ImGui::CollapsingHeader("Post Processing"))
+	{
+		ImGui::DragInt("Blur Radius", &blur, blurRadius, 0, 5);
+	}
+
 	//Set the ImGui changes
 	entities[0]->GetTransform()->SetPosition((XMFLOAT3)pos);
 	entities[0]->GetTransform()->SetRotation((XMFLOAT3)rot);
@@ -821,6 +895,9 @@ void Game::ImGuiUpdate(float deltaTime, float totalTime)
 	pointLight2.Color.x = light5[0];
 	pointLight2.Color.y = light5[1];
 	pointLight2.Color.z = light5[2];
+
+	//Blur
+	blurRadius = blur;
 
 	ImGui::End();
 }

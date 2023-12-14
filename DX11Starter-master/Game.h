@@ -125,5 +125,17 @@ private:
 	DirectX::XMFLOAT4X4 lightViewMatrix;
 	DirectX::XMFLOAT4X4 lightProjectMatrix;
 	float shadowMapRes;
+
+	//Post Processing
+	Microsoft::WRL::ComPtr<ID3D11SamplerState> ppSampler;
+	std::shared_ptr<SimpleVertexShader> ppVS;
+	std::shared_ptr<SimplePixelShader> ppPS;
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> ppRTV;
+	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> ppSRV;
+	int blurRadius;
+
+
+	//Misc
+	float rotate;
 };
 
